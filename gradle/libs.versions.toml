@@ -1,0 +1,13 @@
+[versions]
+kotlin = "2.1.0"
+[libraries]
+clikt = "com.github.ajalt.clikt:clikt:5.0.3"
+kotlin-logging = "io.github.oshai:kotlin-logging-jvm:7.0.3"
+sl4fj-simple = "org.slf4j:slf4j-simple:2.0.3"
+testcontainers-localstack = "org.testcontainers:localstack:1.20.0"
+kotlinx-coroutines-test = "org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.1"
+kotest-assertions-core= "io.kotest:kotest-assertions-core:5.9.1"
+awaitility-kotlin = "org.awaitility:awaitility-kotlin:4.3.0"
+mockk = "io.mockk:mockk:1.13.17"
+[plugins]
+kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
