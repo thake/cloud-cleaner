@@ -16,7 +16,6 @@ import aws.sdk.kotlin.services.cloudformation.paginators.listStackResourcesPagin
 import aws.sdk.kotlin.services.cloudformation.waiters.waitUntilStackCreateComplete
 import aws.sdk.kotlin.services.cloudformation.waiters.waitUntilStackDeleteComplete
 import aws.sdk.kotlin.services.cloudformation.waiters.waitUntilStackUpdateComplete
-import aws.smithy.kotlin.runtime.auth.awscredentials.CredentialsProvider
 import aws.smithy.kotlin.runtime.retries.Outcome
 import aws.smithy.kotlin.runtime.retries.getOrThrow
 import awspurge.resources.Id
@@ -37,28 +36,43 @@ import kotlin.time.Duration.Companion.milliseconds
 val logger = KotlinLogging.logger {}
 typealias StackName = StringId
 
+private const val TYPE = "CloudFormationStack"
 private const val MAX_ATTEMPTS = 3
 private const val concurrencyResourceLookup = 3
-fun createCloudFormationStackResource(connectionInformation: AwsConnectionInformation): ResourceDefinition<CloudFormationStack> {
-    val client = CloudFormationClient {
-        credentialsProvider = connectionInformation.credentialsProvider
-        region = connectionInformation.region
-        retryStrategy {
-            maxAttempts = 99
-            delayProvider {
-                initialDelay = 400.milliseconds
+
+class CloudformationStackResourceDefinitionFactory : AwsResourceDefinitionFactory<CloudFormationStack> {
+    override val type: String = TYPE
+
+    override fun createResourceDefinition(
+        connectionInformation: AwsConnectionInformation,
+    ): ResourceDefinition<CloudFormationStack> {
+        val client = CloudFormationClient {
+            credentialsProvider = connectionInformation.credentialsProvider
+            region = connectionInformation.region
+            retryStrategy {
+                maxAttempts = 99
+                delayProvider {
+                    initialDelay = 400.milliseconds
+                }
             }
         }
+        return ResourceDefinition(
+            type = TYPE,
+            resourceDeleter = CloudFormationStackDeleter(client),
+            resourceScanner = CloudFormationStackScanner(
+                client,
+                connectionInformation.accountId,
+                connectionInformation.region
+            ),
+            close = { client.close() }
+        )
     }
-    return ResourceDefinition(
-        resourceDeleter = CloudFormationStackDeleter(client),
-        resourceScanner = CloudFormationStackScanner(client),
-        close = { client.close() }
-    )
 }
 
 class CloudFormationStackScanner(
-    private val cloudFormationClient: CloudFormationClient
+    private val cloudFormationClient: CloudFormationClient,
+    private val accountId: String,
+    private val region: String
 ) : ResourceScanner<CloudFormationStack> {
     override fun scan(): Flow<CloudFormationStack> =
         flow {
@@ -72,11 +86,16 @@ class CloudFormationStackScanner(
                             this.stackName = stackName.value
                         }
                             .stackResourceSummaries
-                            ?.mapNotNull { it.physicalResourceId }
-                            ?.map { StringId(it) }
+                            ?.mapNotNull {
+                                idFromCloudFormationStackResourceOrNull(
+                                    stackResourceSummary = it,
+                                    accountId = accountId,
+                                    region = region
+                                )
+                            }
                             ?.toSet() ?: emptySet()
                         val dependencies: Set<Id> =
-                            setOfNotNull(stack.roleArn?.let { StringId(it) }) + outputDependencyMap.getOrElse(
+                            setOfNotNull(stack.roleArn?.let { Arn(it) }) + outputDependencyMap.getOrElse(
                                 stackName
                             ) { emptySet() }
                         emit(
@@ -91,10 +110,12 @@ class CloudFormationStackScanner(
             }
         }
 }
+
 fun extractStackNameFromStackId(stackId: String): String {
     val stackInfo = stackId.substringAfter(":stack/")
     return stackInfo.substringBefore("/")
 }
+
 suspend fun CloudFormationClient.outputDependencyMap(): Map<StackName, Set<StackName>> {
     data class Export(val name: String, val stackName: StackName)
 
@@ -136,7 +157,7 @@ suspend fun CloudFormationClient.outputDependencyMap(): Map<StackName, Set<Stack
 }
 
 class CloudFormationStackDeleter(
-    val cloudFormationClient: CloudFormationClient
+    private val cloudFormationClient: CloudFormationClient
 ) : ResourceDeleter {
     override suspend fun delete(resource: Resource) {
         val stack =
@@ -165,6 +186,12 @@ class CloudFormationStackDeleter(
             }.stacks?.firstOrNull()?.stackStatus ?: StackStatus.DeleteComplete
         } catch (e: StackNotFoundException) {
             StackStatus.DeleteComplete
+        } catch (e: CloudFormationException) {
+            if(e.message == "Stack with id ${stack.stackName.value} does not exist") {
+                StackStatus.DeleteComplete
+            } else {
+                throw e
+            }
         }
         return when (currentStatus) {
             StackStatus.DeleteInProgress -> cloudFormationClient.waitUntilStackDeleteComplete {
@@ -244,7 +271,9 @@ class CloudFormationStack(
 ) : Resource {
     override val id: Id
         get() = stackName
-    override val type: String = "AWS::CloudFormation::Stack"
+    override val name: String = stackName.value
+    override val type: String = TYPE
+    override val properties: Map<String, String> = emptyMap()
 
     override fun toString() = stackName.value
 }

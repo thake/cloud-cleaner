@@ -1,7 +1,5 @@
-import org.jetbrains.kotlin.gradle.targets.js.binaryen.BinaryenRootPlugin.Companion.kotlinBinaryenExtension
-
 plugins {
-    alias(libs.plugins.kotlinMultiplatform)
+    alias(libs.plugins.kotlinJvm)
     application
 }
 
@@ -12,37 +10,31 @@ repositories {
     mavenCentral()
 }
 application {
-    mainClass.set("com.thorstenhake.awspurge.MainKt")
-}
-dependencies {
-    commonMainImplementation(libs.clikt)
-    commonMainImplementation(awssdk.services.cloudformation)
-
-    commonMainImplementation(libs.kotlin.logging)
-    commonMainImplementation(libs.sl4fj.simple)
-    commonTestImplementation(kotlin("test"))
-    commonTestImplementation(libs.testcontainers.localstack)
-    commonTestImplementation(libs.kotlinx.coroutines.test)
-    commonTestImplementation(libs.kotest.assertions.core)
-    commonTestImplementation(libs.awaitility.kotlin)
-    commonTestImplementation(libs.mockk)
+    mainClass.set("MainKt")
 }
 tasks.test {
     useJUnitPlatform()
 }
+dependencies {
+    implementation(libs.clikt)
+    implementation(awssdk.services.cloudformation)
+    implementation(awssdk.services.sts)
+    implementation(libs.kotlin.logging)
+    implementation(libs.kotlinx.io.core)
+    implementation(libs.kaml)
+    implementation(libs.kotlinx.coroutines.slf4j)
 
-kotlin {
-    macosArm64 {
-        binaries {
-            executable {
-                entryPoint = "com.thorstenhake.awspurge.MainKt"
-            }
-        }
-    }
-    jvmToolchain(21)
-    jvm()
-    macosX64()
-    linuxX64()
-    linuxArm64()
-    mingwX64()
+    //jvm only
+    implementation(libs.slf4j.api)
+    runtimeOnly(libs.logback.classic)
+
+    // test
+    testImplementation(kotlin("test"))
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.kotest.assertions.core)
+    testImplementation(libs.mockk)
+
+    // jvm test
+    testImplementation(libs.testcontainers.localstack)
+    testImplementation(libs.awaitility.kotlin)
 }

@@ -1,13 +1,19 @@
 [versions]
 kotlin = "2.1.0"
+coroutines = "1.10.1"
 [libraries]
 clikt = "com.github.ajalt.clikt:clikt:5.0.3"
 kotlin-logging = "io.github.oshai:kotlin-logging-jvm:7.0.3"
-sl4fj-simple = "org.slf4j:slf4j-simple:2.0.3"
 testcontainers-localstack = "org.testcontainers:localstack:1.20.0"
-kotlinx-coroutines-test = "org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.1"
 kotest-assertions-core= "io.kotest:kotest-assertions-core:5.9.1"
 awaitility-kotlin = "org.awaitility:awaitility-kotlin:4.3.0"
 mockk = "io.mockk:mockk:1.13.17"
+slf4j-api = "org.slf4j:slf4j-api:2.0.17"
+kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }
+kotlinx-coroutines-slf4j = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-slf4j", version.ref = "coroutines" }
+kotlinx-serialization-json = "org.jetbrains.kotlinx:kotlinx-serialization-json:2.1.20"
+kaml = "com.charleskorn.kaml:kaml:0.73.0"
+kotlinx-io-core = "org.jetbrains.kotlinx:kotlinx-io-core:0.7.0"
+logback-classic="ch.qos.logback:logback-classic:1.5.18"
 [plugins]
-kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
+kotlinJvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }

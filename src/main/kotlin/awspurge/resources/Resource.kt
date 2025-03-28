@@ -4,7 +4,9 @@ import kotlinx.coroutines.flow.Flow
 
 interface Resource {
     val id: Id
+    val name: String
     val type: String
+    val properties: Map<String, String>
     val dependsOn: Set<Id>
         get() = emptySet()
     val contains: Set<Id>

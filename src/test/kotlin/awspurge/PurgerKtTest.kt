@@ -2,42 +2,18 @@
 
 package awspurge
 
-import awspurge.resources.Id
-import awspurge.resources.Resource
-import awspurge.resources.StringId
 import io.kotest.matchers.Matcher
 import io.kotest.matchers.MatcherResult
-import io.kotest.matchers.channels.shouldBeClosed
-import io.kotest.matchers.channels.shouldBeEmpty
 import io.kotest.matchers.collections.shouldContainAll
 import io.kotest.matchers.should
-import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.test.runTest
-import org.hamcrest.MatcherAssert.assertThat
 import kotlin.test.Test
 
 class PurgerKtTest {
-    data class TestResource(
-        override val id: Id,
-        override val dependsOn: Set<StringId> = emptySet(),
-        override val contains: Set<StringId> = emptySet()
-    ) : Resource {
-        override val type: String = "Test"
-
-        constructor(id: String, dependsOn: Set<String> = emptySet(), contains: Set<String> = emptySet()) : this(
-            id = StringId(id),
-            dependsOn = dependsOn.map { StringId(it) }.toSet(),
-            contains = contains.map { StringId(it) }.toSet()
-        ) {
-
-        }
-    }
-
     @Test
     fun `produceDeletableResources should return empty list if no resources are found`() = runTest {
         coroutineScope {

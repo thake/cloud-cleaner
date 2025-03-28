@@ -13,6 +13,7 @@ class ResourceRegistry {
 
 }
 data class ResourceDefinition<T: Resource>(
+    val type: String,
     val resourceDeleter: ResourceDeleter,
     val resourceScanner: ResourceScanner<T>,
     val close: () -> Unit = {},
