@@ -1,4 +1,4 @@
 import com.github.ajalt.clikt.command.main
-import awspurge.Purge
+import cloudcleaner.Clean
 
-suspend fun main(args: Array<String>) = Purge().main(args)
+suspend fun main(args: Array<String>) = Clean().main(args)

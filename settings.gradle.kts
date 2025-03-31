@@ -12,5 +12,5 @@ dependencyResolutionManagement {
         }
     }
 }
-rootProject.name = "aws-purge"
+rootProject.name = "cloud-cleaner"
 
