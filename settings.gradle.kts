@@ -13,4 +13,5 @@ dependencyResolutionManagement {
     }
 }
 rootProject.name = "cloud-cleaner"
-
+include("base")
+include("cloud-cleaner-aws")

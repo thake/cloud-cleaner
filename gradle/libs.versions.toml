@@ -1,6 +1,8 @@
 [versions]
 kotlin = "2.1.0"
 coroutines = "1.10.1"
+java = "23"
+
 [libraries]
 clikt = "com.github.ajalt.clikt:clikt:5.0.3"
 kotlin-logging = "io.github.oshai:kotlin-logging-jvm:7.0.3"
