@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.kotlinJvm)
     application
+    alias(libs.plugins.graalvm.native)
 }
 
 group = "com.thorsten-hake"
@@ -10,7 +11,7 @@ repositories {
     mavenCentral()
 }
 application {
-    mainClass.set("cloudcleaner.aws.MainKt")
+    mainClass = "cloudcleaner.aws.MainKt"
 }
 tasks.named<JavaExec>("run") {
     isIgnoreExitValue = true
@@ -57,5 +58,34 @@ tasks.test {
     useJUnitPlatform()
 }
 kotlin {
-    jvmToolchain(libs.versions.java.get().toInt())
+    jvmToolchain{
+        vendor = JvmVendorSpec.matching("GraalVM Community")
+        languageVersion = JavaLanguageVersion.of(libs.versions.java.get())
+    }
+}
+
+graalvmNative {
+    binaries.all {
+        resources.autodetect()
+    }
+    binaries {
+        named("main") {
+            javaLauncher.set(javaToolchains.launcherFor {
+                languageVersion.set(JavaLanguageVersion.of(libs.versions.java.get()))
+                vendor.set(JvmVendorSpec.matching("GraalVM Community"))
+            })
+            fallback = false
+            verbose = true
+            mainClass = "cloudcleaner.aws.MainKt"
+
+            buildArgs.add("--initialize-at-build-time=ch.qos.logback")
+            buildArgs.add("--initialize-at-build-time=kotlin")
+            buildArgs.add("--initialize-at-build-time=org.slf4j.LoggerFactory")
+
+            buildArgs.add("-H:+InstallExitHandlers")
+            buildArgs.add("-H:+ReportUnsupportedElementsAtRuntime")
+            buildArgs.add("-H:+ReportExceptionStackTraces")
+        }
+    }
+
 }

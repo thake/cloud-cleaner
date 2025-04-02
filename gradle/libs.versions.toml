@@ -1,7 +1,7 @@
 [versions]
-kotlin = "2.1.0"
+kotlin = "2.1.20"
 coroutines = "1.10.1"
-java = "23"
+java = "21"
 
 [libraries]
 clikt = "com.github.ajalt.clikt:clikt:5.0.3"
@@ -19,3 +19,4 @@ kotlinx-io-core = "org.jetbrains.kotlinx:kotlinx-io-core:0.7.0"
 logback-classic="ch.qos.logback:logback-classic:1.5.18"
 [plugins]
 kotlinJvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+graalvm-native = { id = "org.graalvm.buildtools.native", version = "0.10.6" }
