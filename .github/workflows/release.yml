@@ -10,6 +10,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     permissions:
       contents: read
+    continue-on-error: true
     strategy:
       matrix:
         include:
