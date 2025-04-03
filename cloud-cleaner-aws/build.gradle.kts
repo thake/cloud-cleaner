@@ -58,10 +58,7 @@ tasks.test {
     useJUnitPlatform()
 }
 kotlin {
-    jvmToolchain{
-        vendor = JvmVendorSpec.GRAAL_VM
-        languageVersion = JavaLanguageVersion.of(libs.versions.java.get())
-    }
+    jvmToolchain(libs.versions.java.get().toInt())
 }
 
 graalvmNative {
@@ -70,10 +67,6 @@ graalvmNative {
     }
     binaries {
         named("main") {
-            javaLauncher.set(javaToolchains.launcherFor {
-                languageVersion.set(JavaLanguageVersion.of(libs.versions.java.get()))
-                vendor.set(JvmVendorSpec.GRAAL_VM)
-            })
             fallback = false
             verbose = true
             mainClass = "cloudcleaner.aws.MainKt"
