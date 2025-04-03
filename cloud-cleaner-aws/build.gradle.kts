@@ -59,7 +59,7 @@ tasks.test {
 }
 kotlin {
     jvmToolchain{
-        vendor = JvmVendorSpec.matching("GraalVM Community")
+        vendor = JvmVendorSpec.GRAAL_VM
         languageVersion = JavaLanguageVersion.of(libs.versions.java.get())
     }
 }
@@ -72,7 +72,7 @@ graalvmNative {
         named("main") {
             javaLauncher.set(javaToolchains.launcherFor {
                 languageVersion.set(JavaLanguageVersion.of(libs.versions.java.get()))
-                vendor.set(JvmVendorSpec.matching("GraalVM Community"))
+                vendor.set(JvmVendorSpec.GRAAL_VM)
             })
             fallback = false
             verbose = true
