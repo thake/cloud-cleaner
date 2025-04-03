@@ -30,7 +30,7 @@ jobs:
     - name: Setup Gradle
       uses: gradle/actions/setup-gradle@v4
     - name: Build with Gradle Wrapper
-      run: ./gradlew compileNative
+      run: ./gradlew nativeCompile
     - name: Zip nativeCompile
       run: |
         mkdir -p dist
@@ -39,19 +39,3 @@ jobs:
         zip -r "$ZIP_NAME" *
     - name: Upload result to release
       run: gh release upload ${{ github.event.release.tag_name }} "./dist/$ZIP_NAME" --clobber
-
-  dependency-submission:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-
-    steps:
-    - uses: actions/checkout@v4
-    - name: Set up JDK 17
-      uses: actions/setup-java@v4
-      with:
-        java-version: '17'
-        distribution: 'temurin'
-
-    - name: Generate and submit dependency graph
-      uses: gradle/actions/dependency-submission@v4
