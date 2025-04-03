@@ -40,7 +40,7 @@ jobs:
     - name: Make dist dir
       run: |
         mkdir -p dist
-        cp -r cloud-cleaner-aws/build/native/nativeCompile ./dist/
+        cp -r cloud-cleaner-aws/build/native/nativeCompile/* ./dist/
     - name: Zip nativeCompile
       working-directory: dist
       if: matrix.os != 'windows-latest'
@@ -54,6 +54,12 @@ jobs:
         powershell Compress-Archive -Path * -DestinationPath "$Env:ARCHIVE_NAME.zip"
         echo "ARCHIVE_NAME=$Env:ARCHIVE_NAME.zip" | Out-File -FilePath $env:GITHUB_ENV -Append
     - name: Upload result to release
+      if: matrix.os != 'windows-latest'
       env:
         GH_TOKEN: ${{ github.token }}
       run: gh release upload ${{ github.event.release.tag_name }} "./dist/$ARCHIVE_NAME" --clobber
+    - name: Upload result to release on windows
+      if: matrix.os == 'windows-latest'
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: gh release upload ${{ github.event.release.tag_name }} "./dist/$Env:ARCHIVE_NAME" --clobber
