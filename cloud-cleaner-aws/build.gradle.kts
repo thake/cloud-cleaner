@@ -2,11 +2,11 @@ plugins {
     alias(libs.plugins.kotlinJvm)
     application
     alias(libs.plugins.graalvm.native)
+    alias(libs.plugins.gmazzo.buildconfig)
+    alias(libs.plugins.git.version)
 }
-
-group = "com.thorsten-hake"
-version = "1.0-SNAPSHOT"
-
+val gitVersion: groovy.lang.Closure<String> by extra
+version = gitVersion().removePrefix("v")
 repositories {
     mavenCentral()
 }
@@ -52,6 +52,14 @@ dependencies {
     // jvm test
     testImplementation(libs.testcontainers.localstack)
     testImplementation(libs.awaitility.kotlin)
+}
+@Suppress("INLINE_FROM_HIGHER_PLATFORM")
+buildConfig {
+    packageName = "cloudcleaner.aws"
+    useKotlinOutput {
+        topLevelConstants = true
+    }
+    buildConfigField("APP_VERSION", provider { "\"${project.version}\"" })
 }
 
 tasks.test {
