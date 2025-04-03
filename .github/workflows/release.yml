@@ -1,0 +1,57 @@
+name: Release
+
+on:
+  release:
+    types:
+      - created
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            arch: linux-x64
+          - os: ubuntu-24.04-arm
+            arch: linux-arm64
+          - os: windows-latest
+            arch: windows-x64
+          - os: macos-latest
+            arch: macos-arm64
+          - os: macos-13
+            arch: macos-x64
+    env:
+      ZIP_NAME: cloud-cleaner-aws_${{ matrix.arch }}_${{ github.event.release.tag_name }}.zip
+    steps:
+    - uses: actions/checkout@v4
+    - name: Setup Gradle
+      uses: gradle/actions/setup-gradle@v4
+    - name: Build with Gradle Wrapper
+      run: ./gradlew compileNative
+    - name: Zip nativeCompile
+      run: |
+        mkdir -p dist
+        cp -r cloud-cleaner-aws/build/native/nativeCompile ./dist/
+        cd dist
+        zip -r "$ZIP_NAME" *
+    - name: Upload result to release
+      run: gh release upload ${{ github.event.release.tag_name }} "./dist/$ZIP_NAME" --clobber
+
+  dependency-submission:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+
+    - name: Generate and submit dependency graph
+      uses: gradle/actions/dependency-submission@v4
