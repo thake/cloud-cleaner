@@ -15,7 +15,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Setup Gradle
-      uses: gradle/actions/setup-gradle@4
+      uses: gradle/actions/setup-gradle@v4
     - name: Build with Gradle Wrapper
       run: ./gradlew build
 
@@ -33,4 +33,4 @@ jobs:
         distribution: 'temurin'
 
     - name: Generate and submit dependency graph
-      uses: gradle/actions/dependency-submission@4
+      uses: gradle/actions/dependency-submission@v4
