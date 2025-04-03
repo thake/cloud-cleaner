@@ -45,7 +45,7 @@ languages:
     languageName: English
     title: cloud-cleaner
     params:
-      description: A tool to clean AWS accounts
+      description: A tool to clean AWS accounts.
 
 markup:
   goldmark:
