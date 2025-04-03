@@ -47,7 +47,7 @@ jobs:
       if: matrix.os != 'windows-latest'
       run: | 
         tar -czf "$ARCHIVE_NAME.tar.gz" *
-        echo ARCHIVE_NAME=$ARCHIVE_NAME.tar.gz >> $GITHUB_ENV
+        echo "ARCHIVE_NAME=$ARCHIVE_NAME.tar.gz" >> $GITHUB_ENV
     - name: Zip nativeCompile on windows
       working-directory: dist
       if: matrix.os == 'windows-latest'
