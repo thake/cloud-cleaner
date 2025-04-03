@@ -26,8 +26,7 @@ jobs:
           - os: macos-13
             arch: macos-x64
     env:
-      ARCHIVE_NAME: |
-        cloud-cleaner-aws_${{ matrix.arch }}_${{ github.event.release.tag_name }}
+      ARCHIVE_NAME: cloud-cleaner-aws_${{ matrix.arch }}_${{ github.event.release.tag_name }}
     steps:
     - uses: actions/checkout@v4
     - uses: actions/setup-java@v4
@@ -52,8 +51,8 @@ jobs:
       working-directory: dist
       if: matrix.os == 'windows-latest'
       run: |
-        powershell Compress-Archive -Path * -DestinationPath "$ARCHIVE_NAME.zip"
-        echo "ARCHIVE_NAME=$ARCHIVE_NAME.zip" | Out-File -FilePath $env:GITHUB_ENV -Append
+        powershell Compress-Archive -Path * -DestinationPath "$Env:ARCHIVE_NAME.zip"
+        echo "ARCHIVE_NAME=$Env:ARCHIVE_NAME.zip" | Out-File -FilePath $env:GITHUB_ENV -Append
     - name: Upload result to release
       env:
         GH_TOKEN: ${{ github.token }}
