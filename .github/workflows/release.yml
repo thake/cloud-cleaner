@@ -46,3 +46,5 @@ jobs:
       run: gh release upload ${{ github.event.release.tag_name }} "./dist/$ZIP_NAME" --clobber
     - run: ls -l /home/runner/.gradle/jdks/graalvm_community-21-amd64-linux.2/bin/
       if: always()
+    - run: /Users/runner/.gradle/jdks/graalvm_community-21-aarch64-os_x.2/graalvm-community-openjdk-21.0.2+13.1/Contents/Home/bin/
+      if: always()
