@@ -28,6 +28,10 @@ jobs:
       ZIP_NAME: cloud-cleaner-aws_${{ matrix.arch }}_${{ github.event.release.tag_name }}.zip
     steps:
     - uses: actions/checkout@v4
+    - uses: actions/setup-java@v4
+      with:
+        distribution: 'graalvm'
+        java-version: '21'
     - name: Setup Gradle
       uses: gradle/actions/setup-gradle@v4
     - name: Build with Gradle Wrapper
