@@ -34,7 +34,6 @@ jobs:
         java-version: '21'
     - name: Setup Gradle
       uses: gradle/actions/setup-gradle@v4
-    - run: ls -l /home/runner/.gradle/jdks/graalvm_community-21-amd64-linux.2/bin/
     - name: Build with Gradle Wrapper
       run: ./gradlew nativeCompile
     - name: Zip nativeCompile
@@ -45,3 +44,5 @@ jobs:
         zip -r "$ZIP_NAME" *
     - name: Upload result to release
       run: gh release upload ${{ github.event.release.tag_name }} "./dist/$ZIP_NAME" --clobber
+    - run: ls -l /home/runner/.gradle/jdks/graalvm_community-21-amd64-linux.2/bin/
+      if: always()
