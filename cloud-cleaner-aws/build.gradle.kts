@@ -59,7 +59,7 @@ buildConfig {
     useKotlinOutput {
         topLevelConstants = true
     }
-    buildConfigField("APP_VERSION", provider { "\"${project.version}\"" })
+    buildConfigField("APP_VERSION", provider { project.version.toString() })
 }
 
 tasks.test {
