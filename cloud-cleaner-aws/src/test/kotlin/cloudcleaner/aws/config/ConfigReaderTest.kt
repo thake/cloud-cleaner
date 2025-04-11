@@ -8,10 +8,11 @@ import io.kotest.matchers.shouldBe
 import kotlin.test.Test
 
 class ConfigReaderTest {
-    @Test
-    fun `readConfig should successfully parse valid config`() {
-        // language=yaml
-        val validConfig = """
+  @Test
+  fun `readConfig should successfully parse valid config`() {
+    // language=yaml
+    val validConfig =
+        """
             regions:
             - us-east-1
             - eu-central-1
@@ -39,42 +40,31 @@ class ConfigReaderTest {
                 - CloudFormationStack:
                    - regex: "foo"
                    - regex: "bar"
-        """.trimIndent()
-        val configReader = ConfigReader()
-        val config = configReader.readConfig(validConfig)
-        // then
-        config.regions.shouldBe(listOf("us-east-1", "eu-central-1"))
-        val fooFilterDefinition =
-            TypeFilter("CloudFormationStack", listOf(RegexFilter("foo"), RegexFilter("bar")))
-        config.accounts.shouldBe(
-            listOf(
-                Config.AccountConfig(
-                    accountId = "000000000002",
-                    assumeRole = "admin",
-                    excludeFilters = listOf(fooFilterDefinition),
-                ),
-                Config.AccountConfig(
-                    accountId = "000000000001",
-                    assumeRole = "anotherAdmin",
-                    excludeFilters = listOf(
+        """
+            .trimIndent()
+    val configReader = ConfigReader()
+    val config = configReader.readConfig(validConfig)
+    // then
+    config.regions.shouldBe(listOf("us-east-1", "eu-central-1"))
+    val fooFilterDefinition = TypeFilter("CloudFormationStack", listOf(RegexFilter("foo"), RegexFilter("bar")))
+    config.accounts.shouldBe(
+        listOf(
+            Config.AccountConfig(
+                accountId = "000000000002",
+                assumeRole = "admin",
+                excludeFilters = listOf(fooFilterDefinition),
+            ),
+            Config.AccountConfig(
+                accountId = "000000000001",
+                assumeRole = "anotherAdmin",
+                excludeFilters =
+                    listOf(
                         ValueFilter("some-id"),
                         TypeFilter("CloudFormationStack", listOf(ValueFilter("blub"))),
                         TypeFilter("SsmParameter", listOf(ContainsFilter("*yeah*"))),
-                        fooFilterDefinition
-                    )
-                ),
-                Config.AccountConfig(
-                    accountId = "000000000003",
-                    assumeRole = null,
-                    excludeFilters = emptyList()
-                )
-            )
-        )
-        config.resourceTypes.shouldBe(
-            Config.ResourceTypes(
-                includes = listOf("CloudFormationStack", "SSMParameter"),
-                excludes = emptyList()
-            )
-        )
-    }
+                        fooFilterDefinition)),
+            Config.AccountConfig(accountId = "000000000003", assumeRole = null, excludeFilters = emptyList())))
+    config.resourceTypes.shouldBe(
+        Config.ResourceTypes(includes = listOf("CloudFormationStack", "SSMParameter"), excludes = emptyList()))
+  }
 }
