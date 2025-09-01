@@ -34,6 +34,7 @@ dependencies {
   implementation(awssdk.services.cloudwatchlogs)
   implementation(awssdk.services.sqs)
   implementation(awssdk.services.sns)
+  implementation(awssdk.services.dynamodb)
   implementation(awssdk.services.sso)
   implementation(awssdk.runtime.smithy.kotlin.http.client.engine.okhttp)
 

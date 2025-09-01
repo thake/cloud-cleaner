@@ -2,6 +2,7 @@ package cloudcleaner.aws.resources
 
 import cloudcleaner.aws.config.Config
 import cloudcleaner.aws.resources.cloudformation.cloudFormationResources
+import cloudcleaner.aws.resources.dynamodb.dynamoDbResources
 import cloudcleaner.resources.Resource
 import cloudcleaner.resources.ResourceDefinition
 import cloudcleaner.resources.ResourceRegistry
@@ -11,7 +12,7 @@ fun loadAwsResources(
     resourceTypes: Config.ResourceTypes
 ): ResourceRegistry {
   val registry = ResourceRegistry()
-  val definitions = cloudFormationResources()
+  val definitions = cloudFormationResources() + dynamoDbResources()
   definitions
       .filter { awsConnectionInformation.region != "global" || it.availableInGlobal }
       .filter { resourceTypes.isIncluded(it.type) }
