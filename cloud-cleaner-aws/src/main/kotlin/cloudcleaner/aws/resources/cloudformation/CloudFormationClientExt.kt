@@ -110,7 +110,7 @@ suspend fun CloudFormationClient.getStackDescription(stackName: String) =
       }
     }
 
-private fun isStackNotFound(e: CloudFormationException) =
+fun isStackNotFound(e: CloudFormationException) =
     e is StackNotFoundException || (e.message.contains("Stack with id") && e.message.contains("does not exist"))
 
 /**

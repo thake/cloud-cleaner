@@ -12,6 +12,6 @@ class DryRunDeleter: ResourceDeleter {
         logger.info { "DRY RUN mode. Only printing the order in which resources would be deleted" }
     }
     override suspend fun delete(resource: Resource) {
-        logger.info { "${currentNumber.incrementAndGet()}. ${resource.type} ${resource.id} would be deleted." }
+        logger.debug { "${currentNumber.incrementAndGet()}. ${resource.type} ${resource.id} would be deleted." }
     }
 }

@@ -3,13 +3,12 @@ package cloudcleaner.aws.resources.cloudformation
 import aws.sdk.kotlin.services.cloudformation.CloudFormationClient
 import aws.sdk.kotlin.services.cloudformation.deleteStack
 import aws.sdk.kotlin.services.cloudformation.listStackResources
+import aws.sdk.kotlin.services.cloudformation.model.CloudFormationException
 import aws.sdk.kotlin.services.cloudformation.model.DescribeStacksRequest
-import aws.sdk.kotlin.services.cloudformation.model.DescribeStacksResponse
 import aws.sdk.kotlin.services.cloudformation.model.StackStatus
 import aws.sdk.kotlin.services.cloudformation.paginators.describeStacksPaginated
 import aws.sdk.kotlin.services.cloudformation.updateTerminationProtection
 import aws.sdk.kotlin.services.cloudformation.waiters.waitUntilStackDeleteComplete
-import aws.smithy.kotlin.runtime.retries.Outcome
 import aws.smithy.kotlin.runtime.retries.getOrThrow
 import cloudcleaner.aws.resources.Arn
 import cloudcleaner.aws.resources.AwsConnectionInformation
@@ -99,9 +98,13 @@ class CloudFormationStackDeleter(private val cloudFormationClient: CloudFormatio
       attempt++
       retrying = attempt < MAX_ATTEMPTS
       try {
-        doDelete(stack).getOrThrow()
+        doDelete(stack)
         retrying = false
       } catch (e: Exception) {
+        if (e is CloudFormationException && isStackNotFound(e)) {
+          // we are done!
+          return
+        }
         if (retrying) {
           logger.info(e) { "CloudFormation stack $resource deletion failed. Retrying. Error: ${e.message}" }
         } else {
@@ -111,19 +114,20 @@ class CloudFormationStackDeleter(private val cloudFormationClient: CloudFormatio
     }
   }
 
-  private suspend fun doDelete(stack: CloudFormationStack): Outcome<DescribeStacksResponse> {
+  private suspend fun doDelete(stack: CloudFormationStack) {
     val currentState = cloudFormationClient.getStackDescription(stack.stackName.value)
-    return when (currentState.stackStatus) {
+    when (currentState.stackStatus) {
       StackStatus.DeleteInProgress ->
-        cloudFormationClient.waitUntilStackDeleteComplete { stackName = stack.stackName.value }
+        cloudFormationClient.waitUntilStackDeleteComplete { stackName = stack.stackName.value }.getOrThrow()
 
       StackStatus.DeleteFailed -> {
         logger.warn {
           "Deletion of Cloudformation Stack $stack failed. Attempting to delete stack while retaining failed resources."
         }
-        cloudFormationClient.deleteStackAndRetainAllUndeletedResources(stack.stackName.value)
+        cloudFormationClient.deleteStackAndRetainAllUndeletedResources(stack.stackName.value).getOrThrow()
       }
 
+      StackStatus.DeleteComplete -> Unit
       else -> {
         cloudFormationClient.waitForRunningOperationsToFinish(stack.stackName.value, currentState.stackStatus)
         if (currentState.enableTerminationProtection) {
@@ -138,7 +142,7 @@ class CloudFormationStackDeleter(private val cloudFormationClient: CloudFormatio
             DescribeStacksRequest {
               stackName = stack.stackName.value
             },
-        )
+        ).getOrThrow()
       }
     }
   }
