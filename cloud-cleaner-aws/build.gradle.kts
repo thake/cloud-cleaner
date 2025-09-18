@@ -70,6 +70,9 @@ buildConfig {
 
 tasks.test {
   useJUnitPlatform()
+  environment("AWS_ACCESS_KEY_ID", "test")
+  environment("AWS_SECRET_ACCESS_KEY", "test")
+  environment("AWS_DEFAULT_REGION", "eu-central-1")
   testLogging {
     exceptionFormat = TestExceptionFormat.FULL
   }
