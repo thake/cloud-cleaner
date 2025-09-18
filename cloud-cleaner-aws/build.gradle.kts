@@ -1,3 +1,5 @@
+import org.gradle.api.tasks.testing.logging.TestExceptionFormat
+
 plugins {
   alias(libs.plugins.kotlinJvm)
   application
@@ -66,7 +68,12 @@ buildConfig {
   buildConfigField("APP_VERSION", provider { project.version.toString() })
 }
 
-tasks.test { useJUnitPlatform() }
+tasks.test {
+  useJUnitPlatform()
+  testLogging {
+    exceptionFormat = TestExceptionFormat.FULL
+  }
+}
 
 kotlin { jvmToolchain(libs.versions.java.get().toInt()) }
 

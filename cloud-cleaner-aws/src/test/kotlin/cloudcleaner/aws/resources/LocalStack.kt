@@ -1,5 +1,6 @@
 package cloudcleaner.aws.resources
 
+import aws.smithy.kotlin.runtime.net.url.Url
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.testcontainers.containers.localstack.LocalStackContainer
 import org.testcontainers.images.PullPolicy
@@ -9,13 +10,14 @@ private val logger = KotlinLogging.logger {}
 
 object LocalStack {
   private val localStackContainer =
-      LocalStackContainer(DockerImageName.parse("localstack/localstack:3").asCompatibleSubstituteFor("localstack/localstack"))
+      LocalStackContainer(DockerImageName.parse("localstack/localstack:4").asCompatibleSubstituteFor("localstack/localstack"))
           .withImagePullPolicy(PullPolicy.alwaysPull())
           .withExposedPorts(4566)
+          .withReuse(true)
 
-  val localstackUrl: String by lazy {
+  val localstackUrl: Url by lazy {
     if (!localStackContainer.isRunning) startLocalstack()
-    localStackContainer.endpoint.toString()
+    Url.parse(localStackContainer.endpoint.toString())
   }
 
   private fun startLocalstack() {
