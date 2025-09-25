@@ -29,7 +29,7 @@ jobs:
       ARCHIVE_NAME: cloud-cleaner-aws_${{ matrix.arch }}_${{ github.event.release.tag_name }}
     steps:
     - uses: actions/checkout@v4
-    - uses: actions/setup-java@v4
+    - uses: actions/setup-java@v5
       with:
         distribution: 'graalvm'
         java-version: '21'
