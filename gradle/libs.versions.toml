@@ -14,7 +14,7 @@ slf4j-api = "org.slf4j:slf4j-api:2.0.17"
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }
 kotlinx-coroutines-slf4j = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-slf4j", version.ref = "coroutines" }
 kotlinx-serialization-json = "org.jetbrains.kotlinx:kotlinx-serialization-json:2.1.20"
-kaml = "com.charleskorn.kaml:kaml:0.73.0"
+kaml = "com.charleskorn.kaml:kaml:0.103.0"
 kotlinx-io-core = "org.jetbrains.kotlinx:kotlinx-io-core:0.7.0"
 logback-classic="ch.qos.logback:logback-classic:1.5.18"
 wiremock-standalone="org.wiremock:wiremock-standalone:3.13.1"
