@@ -7,6 +7,30 @@ on:
 
 jobs:
   build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      ARCHIVE_NAME: cloud-cleaner-aws-${{ github.event.release.tag_name }}.zip
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'graalvm'
+          java-version: '21'
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+      - name: Build with Gradle Wrapper
+        run: ./gradlew build
+      - name: Make dist dir
+        run: |
+          mkdir -p dist
+          cp -r cloud-cleaner-aws/build/distributions/* ./dist/
+      - name: Upload result to release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload ${{ github.event.release.tag_name }} "./dist/$ARCHIVE_NAME" --clobber
+  build-native:
     runs-on: ${{ matrix.os }}
     permissions:
       contents: write

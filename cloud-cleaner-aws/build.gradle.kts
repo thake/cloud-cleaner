@@ -61,7 +61,6 @@ dependencies {
   testImplementation(libs.wiremock.standalone)
 }
 
-@Suppress("INLINE_FROM_HIGHER_PLATFORM")
 buildConfig {
   packageName = "cloudcleaner.aws"
   useKotlinOutput { topLevelConstants = true }
