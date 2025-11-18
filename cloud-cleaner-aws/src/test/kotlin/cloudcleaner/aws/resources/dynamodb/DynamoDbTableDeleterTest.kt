@@ -10,6 +10,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
+import org.junit.jupiter.api.assertDoesNotThrow
 import kotlin.test.Test
 
 class DynamoDbTableDeleterTest {
@@ -31,6 +32,19 @@ class DynamoDbTableDeleterTest {
 
     // then
     dynamoDbClient.getActiveTableOrNull("test-table").shouldBeNull()
+  }
+
+  @Test
+  fun `delete should ignore already deleted table`() = runTest {
+    // given
+    val table = DynamoDbTable(
+        tableName = TableName("does-not-exist-table"),
+        tableArn = null,
+        deletionProtectionEnabled = false,
+    )
+
+    // when & then
+    assertDoesNotThrow { underTest.delete(table)  }
   }
 
   @Test
