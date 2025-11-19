@@ -11,6 +11,7 @@ data class Config(
       val accountId: String,
       val assumeRole: String?,
       val excludeFilters: List<Filter>,
+      val includeFilters: List<Filter>,
   )
 
   data class ResourceTypes(val includes: List<String>, val excludes: List<String>) {

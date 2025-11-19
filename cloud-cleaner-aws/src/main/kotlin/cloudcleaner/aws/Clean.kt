@@ -23,13 +23,13 @@ import com.github.ajalt.clikt.parameters.options.prompt
 import com.github.ajalt.clikt.parameters.options.required
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.github.oshai.kotlinlogging.withLoggingContext
-import kotlin.time.Duration.Companion.hours
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.slf4j.MDCContext
 import kotlinx.coroutines.withContext
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
+import kotlin.time.Duration.Companion.hours
 
 private val logger = KotlinLogging.logger {}
 
@@ -102,7 +102,7 @@ class Clean : SuspendingCliktCommand(name = "clean") {
             awsConnectionInformation =
                 AwsConnectionInformation(accountId = account.accountId, credentialsProvider = credentials, region = region),
             resourceTypes = config.resourceTypes)
-    val cleaner = Cleaner(dryRun = dryRun, resourceRegistry = registry, excludeFilter = account.excludeFilters)
+    val cleaner = Cleaner(dryRun = dryRun, resourceRegistry = registry, excludeFilters = account.excludeFilters, includeFilters = account.includeFilters)
     try {
       cleaner.clean()
     } finally {

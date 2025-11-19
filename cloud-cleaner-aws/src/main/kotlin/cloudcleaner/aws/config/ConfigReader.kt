@@ -40,15 +40,22 @@ class ConfigReader {
     val accounts =
         yamlNode.yamlMap.get<YamlMap>("accounts")?.entries?.map { accountNode ->
           val accountId = accountNode.key.content
-          val accountConfig = accountNode.value as? YamlMap ?: return@map Config.AccountConfig(accountId, null, emptyList())
+          val accountConfig = accountNode.value as? YamlMap ?: return@map Config.AccountConfig(accountId, null, emptyList(), emptyList())
           val excludeFilters =
               accountConfig
                   .get<YamlList>("excludeFilters")
                   ?.items
                   ?.map { parseTypeFiltersOrResolveReference(it, filterDefinitions) }
                   ?.flatten() ?: emptyList()
+          val includeFilters =
+              accountConfig
+                  .get<YamlList>("includeFilters")
+                  ?.items
+                  ?.map { parseTypeFiltersOrResolveReference(it, filterDefinitions) }
+                  ?.flatten() ?: emptyList()
+
           val role = accountConfig.get<YamlScalar>("assumeRole")?.content
-          Config.AccountConfig(accountId, role, excludeFilters)
+          Config.AccountConfig(accountId, role, excludeFilters, includeFilters)
         }
     val resourceTypes =
         yamlNode.yamlMap.get<YamlMap>("resourceTypes")?.let { resourceTypesNode ->

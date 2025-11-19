@@ -23,7 +23,8 @@ private const val MAX_CONCURRENCY = 10
 class Cleaner(
   val dryRun: Boolean,
   private val resourceRegistry: ResourceRegistry,
-  private val excludeFilter: List<Filter>
+  private val excludeFilters: List<Filter>,
+  private val includeFilters: List<Filter>
 ) {
   suspend fun clean() {
     if (dryRun) {
@@ -40,7 +41,9 @@ class Cleaner(
           resources
         }
         .flatten()
-    val resourcesToDelete = resources.filter { resource -> excludeFilter.none { it.matches(resource) } }
+    val resourcesToDelete = resources
+        .filter { resource -> includeFilters.isEmpty() || includeFilters.any { it.matches(resource) } }
+        .filter { resource -> excludeFilters.none { it.matches(resource) } }
     if (logger.isInfoEnabled()) {
       val resourcesByType = resources.groupBy { it.type }
       val resourcesToDeleteByType = resourcesToDelete.groupBy { it.type }
