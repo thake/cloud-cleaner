@@ -41,6 +41,7 @@ class S3ClientStub(
       val objects: MutableList<ObjectStub> = mutableListOf(),
       val versions: MutableList<ObjectVersionStub> = mutableListOf(),
       val deleteMarkers: MutableList<DeleteMarkerStub> = mutableListOf(),
+      val region: String = "eu-central-1"
   )
 
   data class ObjectStub(val key: String)
@@ -50,7 +51,8 @@ class S3ClientStub(
   data class DeleteMarkerStub(val key: String, val versionId: String)
 
   override suspend fun listBuckets(input: ListBucketsRequest): ListBucketsResponse = ListBucketsResponse {
-    buckets = this@S3ClientStub.buckets.map { Bucket { name = it.name } }
+    buckets =
+        this@S3ClientStub.buckets.filter { input.bucketRegion == null || it.region == input.bucketRegion }.map { Bucket { name = it.name } }
   }
 
   override suspend fun getBucketVersioning(input: GetBucketVersioningRequest): GetBucketVersioningResponse {
@@ -115,7 +117,6 @@ class S3ClientStub(
     buckets.remove(bucket)
     return DeleteBucketResponse {}
   }
-
 }
 
 fun NotFound() = NotFound {}.apply { sdkErrorMetadata.attributes[ServiceErrorMetadata.ErrorCode] = "NotFound" }

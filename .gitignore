@@ -45,3 +45,4 @@ bin/
 .DS_Store
 
 nuke-identity.yaml
+/test-nuke-identity.yaml

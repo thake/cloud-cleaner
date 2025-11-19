@@ -48,16 +48,18 @@ class S3BucketResourceDefinitionFactory : AwsResourceDefinitionFactory<S3Bucket>
     return ResourceDefinition(
         type = TYPE,
         resourceDeleter = S3BucketDeleter(client),
-        resourceScanner = S3BucketScanner(client),
+        resourceScanner = S3BucketScanner(client, awsConnectionInformation.region),
         close = { client.close() },
     )
   }
 }
 
-class S3BucketScanner(private val s3Client: S3Client) : ResourceScanner<S3Bucket> {
+class S3BucketScanner(private val s3Client: S3Client, val region: String) : ResourceScanner<S3Bucket> {
   override fun scan(): Flow<S3Bucket> = flow {
     try {
-      s3Client.listBucketsPaginated().collect { response ->
+      s3Client.listBucketsPaginated{
+        bucketRegion = region
+      }.collect { response ->
         response.buckets?.forEach { bucket ->
           val name = bucket.name ?: return@forEach
           val bucketName = BucketName(name)
@@ -111,7 +113,11 @@ class S3BucketDeleter(private val s3Client: S3Client) : ResourceDeleter {
         s3Client.headBucket { this.bucket = bucketName }
         true
       } catch (e: ServiceException) {
-        if (e.sdkErrorMetadata.errorCode == "NoSuchBucket" || e.sdkErrorMetadata.errorCode == "NotFound") false else throw e
+        when (e.sdkErrorMetadata.errorCode) {
+            "NoSuchBucket", "NotFound" -> false
+            "301: Moved Permanently" -> false
+            else -> throw e
+        }
       }
 
   private suspend fun deleteAllObjects(bucketName: String) {
