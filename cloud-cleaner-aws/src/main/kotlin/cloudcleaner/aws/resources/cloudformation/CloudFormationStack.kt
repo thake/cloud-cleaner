@@ -106,7 +106,7 @@ class CloudFormationStackDeleter(private val cloudFormationClient: CloudFormatio
           return
         }
         if (retrying) {
-          logger.info(e) { "CloudFormation stack $resource deletion failed. Retrying. Error: ${e.message}" }
+          logger.info { "CloudFormation stack $resource deletion failed. Retrying. Error: ${e.message}" }
         } else {
           throw e
         }
