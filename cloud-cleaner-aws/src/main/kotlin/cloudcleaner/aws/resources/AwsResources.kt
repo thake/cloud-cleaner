@@ -9,23 +9,21 @@ import cloudcleaner.resources.Resource
 import cloudcleaner.resources.ResourceDefinition
 import cloudcleaner.resources.ResourceRegistry
 
-fun loadAwsResources(
+fun ResourceRegistry.addAwsResources(
     awsConnectionInformation: AwsConnectionInformation,
     resourceTypes: Config.ResourceTypes
 ): ResourceRegistry {
-  val registry = ResourceRegistry()
   val definitions = cloudFormationResources() + dynamoDbResources() + iamResources() + s3Resources()
   definitions
-      .filter { awsConnectionInformation.region != "global" || it.availableInGlobal }
+      .filter { it.isAvailableInRegion(awsConnectionInformation.region) }
       .filter { resourceTypes.isIncluded(it.type) }
-      .forEach { registry.registerResourceDefinition(it.createResourceDefinition(awsConnectionInformation)) }
-  return registry
+      .forEach { registerResourceDefinition(it.createResourceDefinition(awsConnectionInformation)) }
+  return this
 }
 
 interface AwsResourceDefinitionFactory<T : Resource> {
   val type: String
-  val availableInGlobal: Boolean
-    get() = false
+  fun isAvailableInRegion(region: String): Boolean = region != "global"
 
   fun createResourceDefinition(
       awsConnectionInformation: AwsConnectionInformation,

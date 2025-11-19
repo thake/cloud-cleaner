@@ -133,7 +133,7 @@ data class DynamoDbTable(
   override val id: Id
     get() = tableName
 
-  override val contains: Set<Id> = emptySet()
+  override val containedResources: Set<Id> = emptySet()
   override val dependsOn: Set<Id> = emptySet()
   override val name: String = tableName.value
   override val type: String = TYPE

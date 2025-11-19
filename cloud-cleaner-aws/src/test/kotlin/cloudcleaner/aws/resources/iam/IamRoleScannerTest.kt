@@ -56,7 +56,7 @@ class IamRoleScannerTest {
         val actualRoles = actualFlow.toList()
         actualRoles.shouldHaveSize(1)
         val actualRole = actualRoles.first()
-        actualRole.roleName.value shouldBe "test-role"
+        actualRole.roleName shouldBe "test-role"
         actualRole.roleArn.value shouldBe "arn:aws:iam::$ACCOUNT_ID:role/test-role"
         actualRole.dependsOn.shouldBeEmpty()
     }

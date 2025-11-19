@@ -97,7 +97,7 @@ class DynamoDbTableDeleterTest {
       override val name = "test"
       override val type = "NotDynamoDb"
       override val properties = emptyMap<String, String>()
-      override val contains = emptySet<cloudcleaner.resources.Id>()
+      override val containedResources = emptySet<cloudcleaner.resources.Id>()
       override val dependsOn = emptySet<cloudcleaner.resources.Id>()
     }
 

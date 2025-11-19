@@ -10,7 +10,7 @@ data class TestResource(
     override val properties: Map<String, String> = emptyMap(),
     override val type: String = "Test",
     override val dependsOn: Set<StringId> = emptySet(),
-    override val contains: Set<StringId> = emptySet(),
+    override val containedResources: Set<StringId> = emptySet(),
 
     ) : Resource {
 
@@ -21,6 +21,6 @@ data class TestResource(
         id = StringId(id),
         name = name,
         dependsOn = dependsOn.map { StringId(it) }.toSet(),
-        contains = contains.map { StringId(it) }.toSet()
+        containedResources = contains.map { StringId(it) }.toSet()
     )
 }

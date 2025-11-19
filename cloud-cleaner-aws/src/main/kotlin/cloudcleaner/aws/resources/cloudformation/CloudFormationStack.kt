@@ -83,7 +83,7 @@ class CloudFormationStackScanner(
                 outputDependencyMap.getOrElse(stackName.value) { emptySet() }.map { StackName(it) }.toSet()
             val parentDependency = setOfNotNull(stack.parentId?.let { StackName(extractStackNameFromStackId(it)) })
             val dependencies = roleDependency + exportDependencies + parentDependency
-            emit(CloudFormationStack(stackName = stackName, contains = contains, dependsOn = dependencies))
+            emit(CloudFormationStack(stackName = stackName, containedResources = contains, dependsOn = dependencies))
           }
     }
   }
@@ -150,7 +150,7 @@ class CloudFormationStackDeleter(private val cloudFormationClient: CloudFormatio
 
 data class CloudFormationStack(
   val stackName: StackName,
-  override val contains: Set<Id>,
+  override val containedResources: Set<Id>,
   override val dependsOn: Set<Id>
 ) : Resource {
   override val id: Id

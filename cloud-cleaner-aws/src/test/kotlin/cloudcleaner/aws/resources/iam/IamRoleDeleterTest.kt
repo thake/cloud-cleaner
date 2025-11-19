@@ -16,10 +16,10 @@ class IamRoleDeleterTest {
     fun `delete should successfully delete a role without policies`() = runTest {
         // given
         val role = IamRole(
-            roleName = RoleName("test-role"),
+            roleName = "test-role",
             roleArn = Arn("arn:aws:iam::123456789012:role/test-role")
         )
-        iamClient.roles.add(RoleStub(role.roleName.value, role.roleArn.value))
+        iamClient.roles.add(RoleStub(role.roleName, role.roleArn.value))
 
         // when
         underTest.delete(role)
@@ -53,12 +53,12 @@ class IamRoleDeleterTest {
         )
         val inlinePolicies = mutableListOf("inline-policy")
         val role = IamRole(
-            roleName = RoleName("test-role"),
+            roleName = "test-role",
             roleArn = Arn("arn:aws:iam::123456789012:role/test-role")
         )
         iamClient.roles.add(
             RoleStub(
-                roleName = role.roleName.value,
+                roleName = role.roleName,
                 roleArn = role.roleArn.value,
                 attachedPolicies = attachedPolicies,
                 inlinePolicies = inlinePolicies
@@ -76,7 +76,7 @@ class IamRoleDeleterTest {
   fun `delete should ignore not existing role`(): Unit = runTest {
     // given
     val role = IamRole(
-      roleName = RoleName("non-existent-role"),
+      roleName = "non-existent-role",
       roleArn = Arn("arn:aws:iam::123456789012:role/non-existent-role")
     )
 

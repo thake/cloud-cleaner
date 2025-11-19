@@ -15,7 +15,6 @@ import cloudcleaner.resources.Resource
 import cloudcleaner.resources.ResourceDefinition
 import cloudcleaner.resources.ResourceDeleter
 import cloudcleaner.resources.ResourceScanner
-import cloudcleaner.resources.StringId
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -25,33 +24,27 @@ import kotlin.time.Duration.Companion.milliseconds
 
 val logger = KotlinLogging.logger {}
 
-typealias RoleName = StringId
-
 private const val TYPE = "IamRole"
 
-data class IamRole(val roleName: RoleName, val roleArn: Arn, private val dependencies: Set<Id> = emptySet()) : Resource {
-  override val id: Id = roleName
-  override val name: String = roleName.value
+data class IamRole(val roleName: String, val roleArn: Arn, private val dependencies: Set<Id> = emptySet()) : Resource {
+  override val id: Arn = roleArn
+  override val name: String = roleName
   override val type: String = TYPE
-  override val properties: Map<String, String> =
-      mapOf(
-          "roleName" to roleName.value,
-          "roleArn" to roleArn.value,
-      )
+  override val properties: Map<String, String> = emptyMap()
   override val dependsOn: Set<Id> = dependencies
-  override val contains: Set<Id> = emptySet()
+  override val containedResources: Set<Id> = emptySet()
 }
 
 class IamRoleResourceDefinitionFactory : AwsResourceDefinitionFactory<IamRole> {
   override val type: String = TYPE
-  override val availableInGlobal: Boolean = true
+
+  override fun isAvailableInRegion(region: String) = "global" == region
 
   override fun createResourceDefinition(
       awsConnectionInformation: AwsConnectionInformation,
   ): ResourceDefinition<IamRole> {
     val client = IamClient {
       credentialsProvider = awsConnectionInformation.credentialsProvider
-      region = awsConnectionInformation.region
       retryStrategy {
         maxAttempts = 99
         delayProvider { initialDelay = 400.milliseconds }
@@ -70,21 +63,25 @@ class IamRoleScanner(private val iamClient: IamClient) : ResourceScanner<IamRole
   override fun scan(): Flow<IamRole> = flow {
     iamClient.listRolesPaginated().collect { response ->
       response.roles.forEach { role ->
-        val roleName = RoleName(role.roleName)
+        if (role.arn.contains(":role/aws-service-role/")) {
+          // Skip AWS Service Roles
+          return@forEach
+        }
+        val roleName = role.roleName
         val roleArn = Arn(role.arn)
 
         // Get attached managed policies as dependencies
         val dependencies =
             try {
               iamClient
-                  .listAttachedRolePoliciesPaginated { this.roleName = roleName.value }
+                  .listAttachedRolePoliciesPaginated { this.roleName = roleName }
                   .transform { response ->
                     response.attachedPolicies?.mapNotNull { policy -> policy.policyArn?.let { Arn(it) } }?.forEach { emit(it) }
                   }
                   .toList()
                   .toMutableSet()
             } catch (e: Exception) {
-              logger.warn(e) { "Failed to list attached policies for role ${roleName.value}: ${e.message}" }
+              logger.warn(e) { "Failed to list attached policies for role ${roleName}: ${e.message}" }
               mutableSetOf()
             }
         // Get permission boundaries
@@ -105,7 +102,7 @@ class IamRoleScanner(private val iamClient: IamClient) : ResourceScanner<IamRole
 class IamRoleDeleter(private val iamClient: IamClient) : ResourceDeleter {
   override suspend fun delete(resource: Resource) {
     val role = resource as? IamRole ?: throw IllegalArgumentException("Resource not an IamRole")
-    val roleName = role.roleName.value
+    val roleName = role.roleName
     if (!iamClient.isRoleExisting(roleName)) {
       return
     }
@@ -133,7 +130,7 @@ class IamRoleDeleter(private val iamClient: IamClient) : ResourceDeleter {
       // Finally, delete the role
       logger.info { "Deleting IAM role $roleName" }
       iamClient.deleteRole { this.roleName = roleName }
-    } catch(_: NoSuchEntityException) {
+    } catch (_: NoSuchEntityException) {
       // Role already deleted
       logger.debug { "Deletion failed because IAM role $roleName already has been deleted." }
     } catch (e: Exception) {
@@ -142,4 +139,3 @@ class IamRoleDeleter(private val iamClient: IamClient) : ResourceDeleter {
     }
   }
 }
-

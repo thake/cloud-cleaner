@@ -41,9 +41,13 @@ class Cleaner(
           resources
         }
         .flatten()
-    val resourcesToDelete = resources
+    var resourcesToDelete = resources
         .filter { resource -> includeFilters.isEmpty() || includeFilters.any { it.matches(resource) } }
         .filter { resource -> excludeFilters.none { it.matches(resource) } }
+    val resourcesToDeleteSet = resourcesToDelete.toSet()
+    val filteredOutResources = resources.filter { it !in resourcesToDeleteSet }
+    val containedInFilteredOurResources = filteredOutResources.flatMap { it.containedResources }.toSet()
+    resourcesToDelete = resourcesToDelete.filter { it.id !in containedInFilteredOurResources }
     if (logger.isInfoEnabled()) {
       val resourcesByType = resources.groupBy { it.type }
       val resourcesToDeleteByType = resourcesToDelete.groupBy { it.type }
@@ -117,7 +121,7 @@ fun CoroutineScope.produceDeletableResources(pendingDeletions: Map<Id, Resource>
   // handle direct dependencies
   allDependencies.forEach { dep -> resourcesToBeDeleted.remove(dep) }
   // handle indirect dependencies
-  resourcesToBeDeleted.filterValues { resource -> resource.contains.any { it in allDependencies } }
+  resourcesToBeDeleted.filterValues { resource -> resource.containedResources.any { it in allDependencies } }
       .keys.forEach { resourcesToBeDeleted.remove(it) }
   logger.info { "This iteration deletes ${resourcesToBeDeleted.size} dependencies." }
   resourcesToBeDeleted.values.forEach { send(it) }

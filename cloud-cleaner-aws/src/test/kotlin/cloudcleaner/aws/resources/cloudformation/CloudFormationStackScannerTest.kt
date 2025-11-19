@@ -97,28 +97,28 @@ class CloudFormationStackScannerTest {
         CloudFormationStack(
             stackName = StackName("exporting"),
             dependsOn = emptySet(),
-            contains = emptySet(),
+            containedResources = emptySet(),
         ),
         CloudFormationStack(
             stackName = StackName("exportingAndImporting"),
             dependsOn = setOf(
                 StackName("exporting"),
             ),
-            contains = emptySet(),
+            containedResources = emptySet(),
         ),
         CloudFormationStack(
             stackName = StackName("importing1"),
             dependsOn = setOf(
                 StackName("exporting"), StackName("exportingAndImporting"),
             ),
-            contains = emptySet(),
+            containedResources = emptySet(),
         ),
         CloudFormationStack(
             stackName = StackName("importing2"),
             dependsOn = setOf(
                 StackName("exportingAndImporting"),
             ),
-            contains = setOf(
+            containedResources = setOf(
                 Arn(roleArn),
             ),
         ),
@@ -127,7 +127,7 @@ class CloudFormationStackScannerTest {
             dependsOn = setOf(
                 Arn(roleArn),
             ),
-            contains = setOf(
+            containedResources = setOf(
                 StackName("nestedStack"),
             ),
         ),
@@ -136,7 +136,7 @@ class CloudFormationStackScannerTest {
             dependsOn = setOf(
                 StackName("usingRole"),
             ),
-            contains = emptySet(),
+            containedResources = emptySet(),
         ),
     )
   }

@@ -171,7 +171,7 @@ data class S3Bucket(
   override val id: Arn
     get() = Arn("arn:aws:s3:::$bucketName")
 
-  override val contains: Set<Id> = emptySet()
+  override val containedResources: Set<Id> = emptySet()
   override val dependsOn: Set<Id> = emptySet()
   override val name: String = bucketName.value
   override val type: String = TYPE

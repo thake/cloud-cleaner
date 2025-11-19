@@ -12,7 +12,8 @@ import cloudcleaner.Cleaner
 import cloudcleaner.aws.config.Config
 import cloudcleaner.aws.config.ConfigReader
 import cloudcleaner.aws.resources.AwsConnectionInformation
-import cloudcleaner.aws.resources.loadAwsResources
+import cloudcleaner.aws.resources.addAwsResources
+import cloudcleaner.resources.ResourceRegistry
 import com.github.ajalt.clikt.command.SuspendingCliktCommand
 import com.github.ajalt.clikt.parameters.groups.OptionGroup
 import com.github.ajalt.clikt.parameters.groups.cooccurring
@@ -54,8 +55,7 @@ class Clean : SuspendingCliktCommand(name = "clean") {
     logger.info { "$dryRunInfo Starting AWS clean" }
     val config = ConfigReader().readConfig(configFile)
 
-    val bootstrapCredentialsProvider =
-        mfaOptions?.let { mfaRootSession(it) } ?: DefaultChainCredentialsProvider(profileName = profile)
+    val bootstrapCredentialsProvider = mfaOptions?.let { mfaRootSession(it) } ?: DefaultChainCredentialsProvider(profileName = profile)
 
     config.accounts.forEach { account ->
       withLoggingContext("accountId" to account.accountId) {
@@ -64,49 +64,42 @@ class Clean : SuspendingCliktCommand(name = "clean") {
     }
   }
 
-  private suspend fun cleanAwsAccount(
-      config: Config,
-      bootstrapCredentialsProvider: CredentialsProvider,
-      account: Config.AccountConfig
-  ) {
-    config.regions.forEach { region ->
-      withLoggingContext("region" to region) {
-        withContext(MDCContext()) { cleanRegion(bootstrapCredentialsProvider, account, region, config) }
-      }
-    }
-  }
+  private suspend fun cleanAwsAccount(config: Config, bootstrapCredentialsProvider: CredentialsProvider, account: Config.AccountConfig) {
+    withContext(MDCContext()) {
+      val registry = ResourceRegistry()
+      logger.info { "Purging account ${account.accountId}." }
+      config.regions.forEach { region ->
+        val credentials =
+            if (account.assumeRole != null) {
+              StsAssumeRoleCredentialsProvider(
+                  bootstrapCredentialsProvider = bootstrapCredentialsProvider,
+                  assumeRoleParameters =
+                      AssumeRoleParameters(
+                          roleArn = "arn:aws:iam::${account.accountId}:role/${account.assumeRole}",
+                          duration = 1.hours,
+                      ),
+                  region = region.takeUnless { it == "global" },
+              )
+            } else {
+              bootstrapCredentialsProvider
+            }
 
-  private suspend fun cleanRegion(
-      bootstrapCredentialsProvider: CredentialsProvider,
-      account: Config.AccountConfig,
-      region: String,
-      config: Config
-  ) {
-    val credentials =
-        if (account.assumeRole != null) {
-          StsAssumeRoleCredentialsProvider(
-              bootstrapCredentialsProvider = bootstrapCredentialsProvider,
-              assumeRoleParameters =
-                  AssumeRoleParameters(
-                      roleArn = "arn:aws:iam::${account.accountId}:role/${account.assumeRole}",
-                      duration = 1.hours,
-                  ),
-              region = region.takeUnless { it == "global" },
-          )
-        } else {
-          bootstrapCredentialsProvider
-        }
-    logger.info { "Purging account ${account.accountId} in '${region}'." }
-    val registry =
-        loadAwsResources(
+        registry.addAwsResources(
             awsConnectionInformation =
                 AwsConnectionInformation(accountId = account.accountId, credentialsProvider = credentials, region = region),
             resourceTypes = config.resourceTypes)
-    val cleaner = Cleaner(dryRun = dryRun, resourceRegistry = registry, excludeFilters = account.excludeFilters, includeFilters = account.includeFilters)
-    try {
-      cleaner.clean()
-    } finally {
-      registry.close()
+      }
+      val cleaner =
+          Cleaner(
+              dryRun = this@Clean.dryRun,
+              resourceRegistry = registry,
+              excludeFilters = account.excludeFilters,
+              includeFilters = account.includeFilters)
+      try {
+        cleaner.clean()
+      } finally {
+        registry.close()
+      }
     }
   }
 

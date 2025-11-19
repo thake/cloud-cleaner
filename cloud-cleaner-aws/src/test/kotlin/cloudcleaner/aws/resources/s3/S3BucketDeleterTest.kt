@@ -95,7 +95,7 @@ class S3BucketDeleterTest {
       override val type = "InvalidType"
       override val properties = emptyMap<String, String>()
       override val dependsOn = emptySet<cloudcleaner.resources.Id>()
-      override val contains = emptySet<cloudcleaner.resources.Id>()
+      override val containedResources = emptySet<cloudcleaner.resources.Id>()
     }
     // when/then
     shouldThrow<IllegalArgumentException> {

@@ -21,7 +21,7 @@ class CloudFormationStackDeleterTest {
     // given
     val stack = CloudFormationStack(
         stackName = StackName("test-stack"),
-        contains = emptySet(),
+        containedResources = emptySet(),
         dependsOn = emptySet(),
     )
     cloudFormationClient.stacks.add(StackStub(stack.stackName.value))
@@ -38,7 +38,7 @@ class CloudFormationStackDeleterTest {
     // given
     val stack = CloudFormationStack(
         stackName = StackName("stack"),
-        contains = emptySet(),
+        containedResources = emptySet(),
         dependsOn = emptySet(),
     )
     cloudFormationClient.stacks.add(
@@ -64,7 +64,7 @@ class CloudFormationStackDeleterTest {
     // given
     val stack = CloudFormationStack(
         stackName = StackName("failing-stack"),
-        contains = emptySet(),
+        containedResources = emptySet(),
         dependsOn = emptySet(),
     )
     cloudFormationClient.stacks.add(StackStub(stack.stackName.value))
@@ -81,7 +81,7 @@ class CloudFormationStackDeleterTest {
     // given
     val stack = CloudFormationStack(
         stackName = StackName("protected-stack"),
-        contains = emptySet(),
+        containedResources = emptySet(),
         dependsOn = emptySet(),
     )
     cloudFormationClient.stacks.add(StackStub(stack.stackName.value, enableTerminationProtection = true))

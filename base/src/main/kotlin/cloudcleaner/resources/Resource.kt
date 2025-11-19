@@ -9,7 +9,7 @@ interface Resource {
     val properties: Map<String, String>
     val dependsOn: Set<Id>
         get() = emptySet()
-    val contains: Set<Id>
+    val containedResources: Set<Id>
         get() = emptySet()
 }
 interface ResourceDeleter {
