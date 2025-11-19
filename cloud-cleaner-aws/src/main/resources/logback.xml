@@ -7,7 +7,7 @@
 
     <appender name="STDOUT" class="ConsoleAppender">
         <encoder class="PatternLayoutEncoder">
-            <pattern>%d{HH:mm:ss.SSS} [%X{accountId} - %X{region}] %-5level %msg%n</pattern>
+            <pattern>%d{HH:mm:ss.SSS} [%X{accountId} - %X{iteration}] %-5level %msg%n</pattern>
         </encoder>
     </appender>
 

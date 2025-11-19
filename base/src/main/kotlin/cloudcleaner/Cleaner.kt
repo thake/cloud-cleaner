@@ -6,6 +6,7 @@ import cloudcleaner.resources.Resource
 import cloudcleaner.resources.ResourceDeleter
 import cloudcleaner.resources.ResourceRegistry
 import io.github.oshai.kotlinlogging.KotlinLogging
+import io.github.oshai.kotlinlogging.withLoggingContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
@@ -14,6 +15,8 @@ import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.produce
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.toCollection
+import kotlinx.coroutines.slf4j.MDCContext
+import kotlinx.coroutines.withContext
 import java.util.concurrent.ConcurrentHashMap
 
 private val logger = KotlinLogging.logger {}
@@ -21,10 +24,10 @@ private val logger = KotlinLogging.logger {}
 private const val MAX_CONCURRENCY = 10
 
 class Cleaner(
-  val dryRun: Boolean,
-  private val resourceRegistry: ResourceRegistry,
-  private val excludeFilters: List<Filter>,
-  private val includeFilters: List<Filter>
+    val dryRun: Boolean,
+    private val resourceRegistry: ResourceRegistry,
+    private val excludeFilters: List<Filter>,
+    private val includeFilters: List<Filter>
 ) {
   suspend fun clean() {
     if (dryRun) {
@@ -33,17 +36,19 @@ class Cleaner(
     logger.info { "Starting clean" }
     val deleterForType = mutableMapOf<String, ResourceDeleter>()
     logger.info { "Scanning resources ..." }
-    val resources = resourceRegistry.resourceDefinitions
-        .map { resourceDefinition ->
-          logger.info { "Scanning for ${resourceDefinition.type} resources ..." }
-          val resources = resourceDefinition.resourceScanner.scan().toCollection(mutableListOf())
-          resources.firstOrNull()?.let { deleterForType[it.type] = resourceDefinition.resourceDeleter }
-          resources
-        }
-        .flatten()
-    var resourcesToDelete = resources
-        .filter { resource -> includeFilters.isEmpty() || includeFilters.any { it.matches(resource) } }
-        .filter { resource -> excludeFilters.none { it.matches(resource) } }
+    val resources =
+        resourceRegistry.resourceDefinitions
+            .map { resourceDefinition ->
+              logger.info { "Scanning for ${resourceDefinition.type} resources ..." }
+              val resources = resourceDefinition.resourceScanner.scan().toCollection(mutableListOf())
+              resources.firstOrNull()?.let { deleterForType[it.type] = resourceDefinition.resourceDeleter }
+              resources
+            }
+            .flatten()
+    var resourcesToDelete =
+        resources
+            .filter { resource -> includeFilters.isEmpty() || includeFilters.any { it.matches(resource) } }
+            .filter { resource -> excludeFilters.none { it.matches(resource) } }
     val resourcesToDeleteSet = resourcesToDelete.toSet()
     val filteredOutResources = resources.filter { it !in resourcesToDeleteSet }
     val containedInFilteredOurResources = filteredOutResources.flatMap { it.containedResources }.toSet()
@@ -67,37 +72,33 @@ class Cleaner(
     deleteResourcesInOrder(resourcesToDelete, deleterForType)
   }
 
-  private suspend fun deleteResourcesInOrder(
-    resources: List<Resource>,
-    deleterForType: MutableMap<String, ResourceDeleter>
-  ) {
+  private suspend fun deleteResourcesInOrder(resources: List<Resource>, deleterForType: MutableMap<String, ResourceDeleter>) {
     val pendingDeletions = ConcurrentHashMap(resources.associateBy { it.id })
+    var iteration = 1
     while (pendingDeletions.isNotEmpty()) {
-      val deletedResources = deleteResourcesNoOneDependsOn(pendingDeletions, deleterForType)
-      deletedResources.forEach { pendingDeletions.remove(it.id) }
+      withLoggingContext("iteration" to iteration.toString()) {
+        withContext(MDCContext()) {
+          val deletedResources = deleteResourcesNoOneDependsOn(pendingDeletions, deleterForType)
+          deletedResources.forEach { pendingDeletions.remove(it.id) }
+        }
+      }
+      iteration++
     }
   }
 
-  private suspend fun deleteResourcesNoOneDependsOn(
-    pendingDeletions: Map<Id, Resource>,
-    deleterForType: Map<String, ResourceDeleter>
-  ) = coroutineScope {
-    val resourcesToDelete = produceDeletableResources(pendingDeletions)
-    (0..<MAX_CONCURRENCY).map {
-      async {
-        deleteResources(resourcesToDelete, deleterForType)
+  private suspend fun deleteResourcesNoOneDependsOn(pendingDeletions: Map<Id, Resource>, deleterForType: Map<String, ResourceDeleter>) =
+      coroutineScope {
+        val resourcesToDelete = produceDeletableResources(pendingDeletions)
+        (0..<MAX_CONCURRENCY).map { async { deleteResources(resourcesToDelete, deleterForType) } }.awaitAll().flatten()
       }
-    }.awaitAll().flatten()
-  }
 
   private suspend fun deleteResources(
-    resourcesToDelete: ReceiveChannel<Resource>,
-    deleterForType: Map<String, ResourceDeleter>
+      resourcesToDelete: ReceiveChannel<Resource>,
+      deleterForType: Map<String, ResourceDeleter>
   ): List<Resource> {
     val deletedResources = mutableListOf<Resource>()
     for (resource in resourcesToDelete) {
-      val deleter = deleterForType[resource.type]
-        ?: throw IllegalStateException("Could not find deleter for type ${resource.type}")
+      val deleter = deleterForType[resource.type] ?: throw IllegalStateException("Could not find deleter for type ${resource.type}")
       logger.info { "Deleting ${resource.id} (${resource.type}) ..." }
       try {
         deleter.delete(resource)
@@ -107,11 +108,9 @@ class Cleaner(
         continue
       }
       deletedResources.add(resource)
-
     }
     return deletedResources
   }
-
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -121,8 +120,10 @@ fun CoroutineScope.produceDeletableResources(pendingDeletions: Map<Id, Resource>
   // handle direct dependencies
   allDependencies.forEach { dep -> resourcesToBeDeleted.remove(dep) }
   // handle indirect dependencies
-  resourcesToBeDeleted.filterValues { resource -> resource.containedResources.any { it in allDependencies } }
-      .keys.forEach { resourcesToBeDeleted.remove(it) }
-  logger.info { "This iteration deletes ${resourcesToBeDeleted.size} dependencies." }
+  resourcesToBeDeleted
+      .filterValues { resource -> resource.containedResources.any { it in allDependencies } }
+      .keys
+      .forEach { resourcesToBeDeleted.remove(it) }
+  logger.info { "New Iteration: ${resourcesToBeDeleted.size} dependencies to be deleted (total remaining: ${pendingDeletions.size})." }
   resourcesToBeDeleted.values.forEach { send(it) }
 }

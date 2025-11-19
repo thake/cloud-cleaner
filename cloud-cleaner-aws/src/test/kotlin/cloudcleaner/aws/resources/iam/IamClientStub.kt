@@ -131,7 +131,7 @@ class IamClientStub(
 
     return ListRolesResponse {
       this.roles = rolesSubset.map { roleStub ->
-        roleStub.toRole()
+        roleStub.toRole().copy { permissionsBoundary = null }
       }
       marker = nextMarker
       isTruncated = nextMarker != null

@@ -4,6 +4,7 @@ import aws.sdk.kotlin.services.iam.IamClient
 import aws.sdk.kotlin.services.iam.deleteRole
 import aws.sdk.kotlin.services.iam.deleteRolePolicy
 import aws.sdk.kotlin.services.iam.detachRolePolicy
+import aws.sdk.kotlin.services.iam.getRole
 import aws.sdk.kotlin.services.iam.model.NoSuchEntityException
 import aws.sdk.kotlin.services.iam.paginators.listAttachedRolePoliciesPaginated
 import aws.sdk.kotlin.services.iam.paginators.listRolesPaginated
@@ -84,8 +85,14 @@ class IamRoleScanner(private val iamClient: IamClient) : ResourceScanner<IamRole
               logger.warn(e) { "Failed to list attached policies for role ${roleName}: ${e.message}" }
               mutableSetOf()
             }
-        // Get permission boundaries
-        role.permissionsBoundary?.permissionsBoundaryArn?.let { dependencies.add(Arn(it)) }
+        // Get permission boundary
+        runCatching { iamClient.getRole { this.roleName = roleName } }
+            .onFailure { logger.warn(it) { "Failed to get role details for $roleName: ${it.message}" } }
+            .getOrNull()
+            ?.role
+            ?.permissionsBoundary
+            ?.permissionsBoundaryArn
+            ?.let { dependencies.add(Arn(it)) }
 
         emit(
             IamRole(
