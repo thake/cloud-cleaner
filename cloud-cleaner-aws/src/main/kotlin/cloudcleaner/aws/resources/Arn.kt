@@ -26,6 +26,7 @@ fun idFromCloudFormationStackResourceOrNull(
   return when (cloudformationType) {
     "AWS::IAM::Role" -> Arn("arn:aws:iam::$accountId:role/$physicalId")
     "AWS::IAM::Policy" -> Arn("arn:aws:iam::$accountId:policy/$physicalId")
+    "AWS::IAM::ManagedPolicy" -> Arn(physicalId)
     "AWS::SSM::Parameter" -> Arn("arn:aws:ssm:$region:$accountId:parameter$physicalId")
     "AWS::ECR::Repository" -> StringId("$accountId.dkr.ecr.$region.amazonaws.com/$physicalId")
     "AWS::S3::Bucket" -> Arn("arn:aws:s3:::$physicalId")

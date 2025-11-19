@@ -106,4 +106,19 @@ class IamClientBehaviorIntegrationTest {
 
     policies.shouldBeEmpty()
   }
+
+  // Policy tests
+  @Test
+  fun `isPolicyExisting should correctly detect not existing policy with stub`() = runTest {
+    val stub = IamClientStub()
+    val givenPolicyArn = "arn:aws:iam::123456789012:policy/${Uuid.random()}"
+    stub.isPolicyExisting(givenPolicyArn) shouldBe iamClient.isPolicyExisting(givenPolicyArn)
+  }
+
+  @Test
+  fun `getPolicyVersions should return empty list for not existing policy with stub`() = runTest {
+    val stub = IamClientStub()
+    val givenPolicyArn = "arn:aws:iam::123456789012:policy/${Uuid.random()}"
+    stub.getPolicyVersions(givenPolicyArn).shouldBe(iamClient.getPolicyVersions(givenPolicyArn))
+  }
 }

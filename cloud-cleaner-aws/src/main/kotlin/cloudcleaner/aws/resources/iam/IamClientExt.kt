@@ -1,9 +1,11 @@
 package cloudcleaner.aws.resources.iam
 
 import aws.sdk.kotlin.services.iam.IamClient
+import aws.sdk.kotlin.services.iam.getPolicy
 import aws.sdk.kotlin.services.iam.getRole
 import aws.sdk.kotlin.services.iam.model.NoSuchEntityException
 import aws.sdk.kotlin.services.iam.paginators.listAttachedRolePoliciesPaginated
+import aws.sdk.kotlin.services.iam.paginators.listPolicyVersionsPaginated
 import aws.sdk.kotlin.services.iam.paginators.listRolePoliciesPaginated
 import cloudcleaner.aws.resources.Arn
 import kotlinx.coroutines.flow.toList
@@ -37,3 +39,24 @@ suspend fun IamClient.isRoleExisting(roleName: String): Boolean {
     false
   }
 }
+
+suspend fun IamClient.isPolicyExisting(policyArn: String): Boolean {
+  return try {
+    this.getPolicy { this.policyArn = policyArn }
+    true
+  } catch (_: NoSuchEntityException) {
+    false
+  }
+}
+
+suspend fun IamClient.getPolicyVersions(policyArn: String): List<String> =
+    try {
+      listPolicyVersionsPaginated { this.policyArn = policyArn }
+          .transform { response ->
+            response.versions?.filter { !it.isDefaultVersion }?.mapNotNull { it.versionId }?.forEach { emit(it) }
+          }
+          .toList()
+    } catch (_: NoSuchEntityException) {
+      emptyList()
+    }
+

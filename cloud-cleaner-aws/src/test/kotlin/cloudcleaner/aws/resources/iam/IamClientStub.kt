@@ -5,21 +5,34 @@ import aws.sdk.kotlin.services.iam.model.AttachedPermissionsBoundary
 import aws.sdk.kotlin.services.iam.model.AttachedPolicy
 import aws.sdk.kotlin.services.iam.model.CreateRoleRequest
 import aws.sdk.kotlin.services.iam.model.CreateRoleResponse
+import aws.sdk.kotlin.services.iam.model.DeletePolicyRequest
+import aws.sdk.kotlin.services.iam.model.DeletePolicyResponse
+import aws.sdk.kotlin.services.iam.model.DeletePolicyVersionRequest
+import aws.sdk.kotlin.services.iam.model.DeletePolicyVersionResponse
 import aws.sdk.kotlin.services.iam.model.DeleteRolePolicyRequest
 import aws.sdk.kotlin.services.iam.model.DeleteRolePolicyResponse
 import aws.sdk.kotlin.services.iam.model.DeleteRoleRequest
 import aws.sdk.kotlin.services.iam.model.DeleteRoleResponse
 import aws.sdk.kotlin.services.iam.model.DetachRolePolicyRequest
 import aws.sdk.kotlin.services.iam.model.DetachRolePolicyResponse
+import aws.sdk.kotlin.services.iam.model.GetPolicyRequest
+import aws.sdk.kotlin.services.iam.model.GetPolicyResponse
 import aws.sdk.kotlin.services.iam.model.GetRoleRequest
 import aws.sdk.kotlin.services.iam.model.GetRoleResponse
 import aws.sdk.kotlin.services.iam.model.ListAttachedRolePoliciesRequest
 import aws.sdk.kotlin.services.iam.model.ListAttachedRolePoliciesResponse
+import aws.sdk.kotlin.services.iam.model.ListPoliciesRequest
+import aws.sdk.kotlin.services.iam.model.ListPoliciesResponse
+import aws.sdk.kotlin.services.iam.model.ListPolicyVersionsRequest
+import aws.sdk.kotlin.services.iam.model.ListPolicyVersionsResponse
 import aws.sdk.kotlin.services.iam.model.ListRolePoliciesRequest
 import aws.sdk.kotlin.services.iam.model.ListRolePoliciesResponse
 import aws.sdk.kotlin.services.iam.model.ListRolesRequest
 import aws.sdk.kotlin.services.iam.model.ListRolesResponse
 import aws.sdk.kotlin.services.iam.model.NoSuchEntityException
+import aws.sdk.kotlin.services.iam.model.Policy
+import aws.sdk.kotlin.services.iam.model.PolicyScopeType
+import aws.sdk.kotlin.services.iam.model.PolicyVersion
 import aws.sdk.kotlin.services.iam.model.Role
 import aws.smithy.kotlin.runtime.time.Instant
 import io.mockk.mockk
@@ -28,6 +41,7 @@ class IamClientStub(
   val delegate: IamClient = mockk<IamClient>()
 ) : IamClient by delegate {
   val roles = mutableListOf<RoleStub>()
+  val policies = mutableListOf<PolicyStub>()
 
   data class RoleStub(
     val roleName: String,
@@ -42,8 +56,22 @@ class IamClientStub(
     val policyArn: String
   )
 
+  data class PolicyStub(
+    val policyName: String,
+    val policyArn: String,
+    val policyVersions: MutableList<PolicyVersionStub> = mutableListOf()
+  )
+
+  data class PolicyVersionStub(
+    val versionId: String,
+    val isDefaultVersion: Boolean = false
+  )
+
   private fun findRole(roleName: String?) =
       roles.find { it.roleName == roleName } ?: throw NoSuchEntityException { message = "Role $roleName not found"}
+
+  private fun findPolicy(policyArn: String?) =
+      policies.find { it.policyArn == policyArn } ?: throw NoSuchEntityException { message = "Policy $policyArn not found"}
 
   override suspend fun deleteRole(input: DeleteRoleRequest): DeleteRoleResponse {
     val role = findRole(input.roleName)
@@ -142,6 +170,76 @@ class IamClientStub(
     path = "/"
     createDate = Instant.now()
     roleId = roleArn
+  }
+
+  // Policy operations
+  override suspend fun listPolicies(input: ListPoliciesRequest): ListPoliciesResponse {
+    val filteredPolicies = if (input.scope == PolicyScopeType.Local) {
+      policies
+    } else {
+      policies
+    }
+
+    val policiesSubset = filteredPolicies.drop(input.marker?.toIntOrNull() ?: 0)
+        .take(input.maxItems ?: filteredPolicies.size)
+
+    val nextMarker = if (policiesSubset.size < filteredPolicies.size - (input.marker?.toIntOrNull() ?: 0)) {
+      ((input.marker?.toIntOrNull() ?: 0) + policiesSubset.size).toString()
+    } else null
+
+    return ListPoliciesResponse {
+      this.policies = policiesSubset.map { policyStub ->
+        policyStub.toPolicy()
+      }
+      marker = nextMarker
+      isTruncated = nextMarker != null
+    }
+  }
+
+  override suspend fun getPolicy(input: GetPolicyRequest): GetPolicyResponse {
+    return GetPolicyResponse {
+      this.policy = findPolicy(input.policyArn).toPolicy()
+    }
+  }
+
+  override suspend fun deletePolicy(input: DeletePolicyRequest): DeletePolicyResponse {
+    val policy = findPolicy(input.policyArn)
+    if (policy.policyVersions.any { !it.isDefaultVersion }) {
+      throw IllegalStateException("Cannot delete policy ${input.policyArn} with non-default versions")
+    }
+    policies.remove(policy)
+    return DeletePolicyResponse {}
+  }
+
+  override suspend fun deletePolicyVersion(input: DeletePolicyVersionRequest): DeletePolicyVersionResponse {
+    val policy = findPolicy(input.policyArn)
+    val version = policy.policyVersions.find { it.versionId == input.versionId }
+      ?: throw IllegalArgumentException("Version ${input.versionId} not found for policy ${input.policyArn}")
+    if (version.isDefaultVersion) {
+      throw IllegalArgumentException("Cannot delete default version ${input.versionId} of policy ${input.policyArn}")
+    }
+    policy.policyVersions.remove(version)
+    return DeletePolicyVersionResponse {}
+  }
+
+  override suspend fun listPolicyVersions(input: ListPolicyVersionsRequest): ListPolicyVersionsResponse {
+    val policy = findPolicy(input.policyArn)
+    return ListPolicyVersionsResponse {
+      this.versions = policy.policyVersions.map {
+        PolicyVersion {
+          versionId = it.versionId
+          isDefaultVersion = it.isDefaultVersion
+        }
+      }
+    }
+  }
+
+  private fun PolicyStub.toPolicy(): Policy = Policy {
+    policyName = this@toPolicy.policyName
+    arn = policyArn
+    policyId = policyArn
+    path = "/"
+    createDate = Instant.now()
   }
 
   override fun close() {
