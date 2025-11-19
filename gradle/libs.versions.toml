@@ -17,7 +17,7 @@ kotlinx-serialization-json = "org.jetbrains.kotlinx:kotlinx-serialization-json:2
 kaml = "com.charleskorn.kaml:kaml:0.103.0"
 kotlinx-io-core = "org.jetbrains.kotlinx:kotlinx-io-core:0.8.0"
 logback-classic="ch.qos.logback:logback-classic:1.5.21"
-wiremock-standalone="org.wiremock:wiremock-standalone:3.13.1"
+wiremock-standalone="org.wiremock:wiremock-standalone:3.13.2"
 [plugins]
 kotlinJvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 graalvm-native = { id = "org.graalvm.buildtools.native", version = "0.11.3" }
