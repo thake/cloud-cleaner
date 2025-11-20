@@ -26,7 +26,9 @@ val route53Logger = KotlinLogging.logger {}
 
 private const val TYPE = "Route53HostedZone"
 
-data class HostedZoneId(val value: String) : Id
+data class HostedZoneId(val value: String) : Id {
+  override fun toString() = "/hostedzone/$value"
+}
 
 data class Route53HostedZone(
     override val id: HostedZoneId,

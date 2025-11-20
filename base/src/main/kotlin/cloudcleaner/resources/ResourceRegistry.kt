@@ -8,7 +8,7 @@ class ResourceRegistry {
     }
 
     fun close() {
-        resourceDefinitions.forEach { it.close() }
+        resourceDefinitions.forEach { runCatching { it.close.invoke() } }
     }
 
 }

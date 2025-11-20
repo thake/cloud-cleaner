@@ -50,9 +50,10 @@ class Cleaner(
             .filter { resource -> includeFilters.isEmpty() || includeFilters.any { it.matches(resource) } }
             .filter { resource -> excludeFilters.none { it.matches(resource) } }
     val resourcesToDeleteSet = resourcesToDelete.toSet()
-    val filteredOutResources = resources.filter { it !in resourcesToDeleteSet }
+    var filteredOutResources = resources.filter { it !in resourcesToDeleteSet }
     val containedInFilteredOurResources = filteredOutResources.flatMap { it.containedResources }.toSet()
     resourcesToDelete = resourcesToDelete.filter { it.id !in containedInFilteredOurResources }
+    filteredOutResources = resources.filter { it.id !in resourcesToDelete.map { it.id }.toSet() }
     if (logger.isInfoEnabled()) {
       val resourcesByType = resources.groupBy { it.type }
       val resourcesToDeleteByType = resourcesToDelete.groupBy { it.type }
@@ -70,6 +71,10 @@ class Cleaner(
     }
 
     deleteResourcesInOrder(resourcesToDelete, deleterForType)
+    logger.info {
+      val statistics: String  = "Filtered out resources: \n" + filteredOutResources.joinToString(separator = "´\n") { "\t- ${it.id} (${it.type})" }
+      "Clean completed.\nStatistics:\n$statistics"
+    }
   }
 
   private suspend fun deleteResourcesInOrder(resources: List<Resource>, deleterForType: MutableMap<String, ResourceDeleter>) {
