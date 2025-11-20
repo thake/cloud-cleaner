@@ -152,8 +152,11 @@ class Cleaner(
 fun CoroutineScope.produceDeletableResources(pendingDeletions: Map<Id, Resource>) = produce {
   val resourcesToBeDeleted = pendingDeletions.toMutableMap()
   val allDependencies = pendingDeletions.values.flatMap { it.dependsOn }.toSet()
+  val allContainedResources = pendingDeletions.values.flatMap { it.containedResources }.toSet()
   // handle direct dependencies
   allDependencies.forEach { dep -> resourcesToBeDeleted.remove(dep) }
+  // handle resources that are contained in other resources
+  allContainedResources.forEach { contained -> resourcesToBeDeleted.remove(contained) }
   // handle indirect dependencies
   resourcesToBeDeleted
       .filterValues { resource -> resource.containedResources.any { it in allDependencies } }

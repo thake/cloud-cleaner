@@ -30,6 +30,7 @@ import kotlinx.coroutines.slf4j.MDCContext
 import kotlinx.coroutines.withContext
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
+import java.io.Closeable
 import kotlin.time.Duration.Companion.hours
 
 private val logger = KotlinLogging.logger {}
@@ -50,7 +51,7 @@ class Clean : SuspendingCliktCommand(name = "clean") {
   val mfaOptions by MfaOptions().cooccurring()
   val dryRun by option("--no-dry-run", help = "Execute cleaning.").flag(default = false).convert { !it }
 
-  override suspend fun run() = coroutineScope {
+  override suspend fun run(): Unit = coroutineScope {
     val dryRunInfo = if (dryRun) "DRY RUN:" else ""
     logger.info { "$dryRunInfo Starting AWS clean" }
     val config = ConfigReader().readConfig(configFile)
@@ -62,6 +63,7 @@ class Clean : SuspendingCliktCommand(name = "clean") {
         launch(MDCContext()) { cleanAwsAccount(config, bootstrapCredentialsProvider, account) }
       }
     }
+    (bootstrapCredentialsProvider as? Closeable)?.close()
   }
 
   private suspend fun cleanAwsAccount(config: Config, bootstrapCredentialsProvider: CredentialsProvider, account: Config.AccountConfig) {

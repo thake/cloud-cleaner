@@ -2,9 +2,11 @@
 
 package cloudcleaner
 
+import cloudcleaner.resources.Resource
 import io.kotest.matchers.Matcher
 import io.kotest.matchers.MatcherResult
 import io.kotest.matchers.collections.shouldContainAll
+import io.kotest.matchers.collections.shouldContainOnly
 import io.kotest.matchers.should
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -75,6 +77,22 @@ class CleanerKtTest {
             receivedElements shouldContainAll listOf(e, f)
         }
     }
+  @Test
+  fun `produceDeletableResources should return resources that are not contained in another resource`() = runTest {
+    coroutineScope {
+      val a = TestResource("A")
+      val c = TestResource("C", contains = setOf("A"))
+      val map = listOf(a, c).associateBy { it.id }
+
+      val deletableResources = produceDeletableResources(map)
+
+      val receivedElements = mutableListOf<Resource>()
+      for(element in deletableResources) {
+          receivedElements.add(element)
+      }
+      receivedElements shouldContainOnly listOf(c)
+    }
+  }
 }
 
 fun <T> ReceiveChannel<T>.shouldBeEmpty() = this should beEmpty()
@@ -83,14 +101,5 @@ fun <T> beEmpty() = object : Matcher<ReceiveChannel<T>> {
         value.isEmpty,
         { "ReceiveChannel should be empty" },
         { "ReceiveChannel should not be empty" }
-    )
-}
-
-fun <T> ReceiveChannel<T>.shouldBeClosed() = this should beClosed()
-fun <T> beClosed() = object : Matcher<ReceiveChannel<T>> {
-    override fun test(value: ReceiveChannel<T>) = MatcherResult(
-        value.isClosedForReceive,
-        { "Channel should be closed" },
-        { "Channel should not be closed" }
     )
 }
