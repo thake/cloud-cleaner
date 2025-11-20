@@ -12,7 +12,7 @@ import aws.sdk.kotlin.services.s3.model.PutObjectRequest
 import aws.smithy.kotlin.runtime.ServiceException
 import aws.smithy.kotlin.runtime.content.ByteStream
 import cloudcleaner.aws.resources.LocalStack
-import cloudcleaner.aws.resources.shouldBeEquivalent
+import cloudcleaner.aws.resources.shouldBeEquivalentTo
 import io.kotest.assertions.throwables.shouldThrow
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
@@ -31,7 +31,7 @@ class S3ClientBehaviorIntegrationTest {
     val bucketName = randomName()
     val expected = shouldThrow<ServiceException> { realClient.headBucket { bucket = bucketName } }
     val actual = shouldThrow<ServiceException> { stub.headBucket { bucket = bucketName } }
-    actual.shouldBeEquivalent(expected)
+    actual.shouldBeEquivalentTo(expected)
   }
 
   @Test fun `getBucketVersioning response for non existing bucket should be the same`() = runTest {
@@ -39,14 +39,14 @@ class S3ClientBehaviorIntegrationTest {
     val bucketName = randomName()
     val actual = shouldThrow<ServiceException> { stub.getBucketVersioning { bucket = bucketName } }
     val expected = shouldThrow<ServiceException> { realClient.getBucketVersioning { bucket = bucketName } }
-    actual.shouldBeEquivalent(expected)
+    actual.shouldBeEquivalentTo(expected)
   }
   @Test fun `deleteBucket response for non existing bucket should be the same`() = runTest {
     val stub = S3ClientStub()
     val bucketName = randomName()
     val expected = shouldThrow<ServiceException> { realClient.deleteBucket { bucket = bucketName} }
     val actual = shouldThrow<ServiceException> { stub.deleteBucket { bucket = bucketName } }
-    actual.shouldBeEquivalent(expected)
+    actual.shouldBeEquivalentTo(expected)
   }
 
   @Test fun `deleteBucket response if bucket contains objects should be the same`() = runTest {
@@ -62,7 +62,7 @@ class S3ClientBehaviorIntegrationTest {
 
     val actual = shouldThrow<ServiceException> { stub.deleteBucket { bucket = name } }
 
-    actual.shouldBeEquivalent(expected)
+    actual.shouldBeEquivalentTo(expected)
   }
 
   @Test fun `listObjectsV2 response on non existing bucket should be the same`() = runTest {
@@ -71,7 +71,7 @@ class S3ClientBehaviorIntegrationTest {
     val actual = shouldThrow<ServiceException> { stub.listObjectsV2 { bucket = name } }
     val expected = shouldThrow<ServiceException> { realClient.listObjectsV2 { bucket = name } }
 
-    actual.shouldBeEquivalent(expected)
+    actual.shouldBeEquivalentTo(expected)
   }
 
 

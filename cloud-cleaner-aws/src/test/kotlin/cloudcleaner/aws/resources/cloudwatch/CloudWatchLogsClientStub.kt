@@ -1,3 +1,5 @@
+@file:OptIn(InternalApi::class)
+
 package cloudcleaner.aws.resources.cloudwatch
 
 import aws.sdk.kotlin.services.cloudwatchlogs.CloudWatchLogsClient
@@ -10,6 +12,8 @@ import aws.sdk.kotlin.services.cloudwatchlogs.model.DescribeLogGroupsResponse
 import aws.sdk.kotlin.services.cloudwatchlogs.model.LogGroup
 import aws.sdk.kotlin.services.cloudwatchlogs.model.ResourceAlreadyExistsException
 import aws.sdk.kotlin.services.cloudwatchlogs.model.ResourceNotFoundException
+import aws.smithy.kotlin.runtime.InternalApi
+import aws.smithy.kotlin.runtime.ServiceErrorMetadata.Companion.ErrorCode
 import cloudcleaner.aws.resources.ACCOUNT_ID
 import cloudcleaner.aws.resources.REGION
 import io.mockk.mockk
@@ -26,7 +30,9 @@ class CloudWatchLogsClientStub(
 
   private fun findLogGroup(logGroupName: String?) =
       logGroups.find { it.logGroupName == logGroupName }
-          ?: throw ResourceNotFoundException { message = "Log group $logGroupName not found" }
+          ?: throw ResourceNotFoundException { message = "Log group $logGroupName not found" }.apply {
+            sdkErrorMetadata.attributes[ErrorCode] = "ResourceNotFoundException"
+          }
 
   override suspend fun createLogGroup(input: CreateLogGroupRequest): CreateLogGroupResponse {
     val logGroupName = input.logGroupName ?: throw IllegalArgumentException("Log group name is required")

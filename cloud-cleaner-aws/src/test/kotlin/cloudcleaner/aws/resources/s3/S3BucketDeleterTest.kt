@@ -15,7 +15,7 @@ class S3BucketDeleterTest {
     // given
     val bucket = S3ClientStub.BucketStub("test-bucket")
     s3Client.buckets.add(bucket)
-    val resource = S3Bucket(BucketName("test-bucket"))
+    val resource = S3Bucket("test-bucket")
     // when
     underTest.delete(resource)
     // then
@@ -33,7 +33,7 @@ class S3BucketDeleterTest {
             S3ClientStub.ObjectStub("folder/file3.txt"),
         ))
     s3Client.buckets.add(bucket)
-    val resource = S3Bucket(BucketName("test-bucket"))
+    val resource = S3Bucket("test-bucket")
     // when
     underTest.delete(resource)
     // then
@@ -55,7 +55,7 @@ class S3BucketDeleterTest {
             S3ClientStub.DeleteMarkerStub("file3.txt", "dm1"),
         ))
     s3Client.buckets.add(bucket)
-    val resource = S3Bucket(BucketName("versioned-bucket"))
+    val resource = S3Bucket("versioned-bucket")
     // when
     underTest.delete(resource)
     // then
@@ -65,7 +65,7 @@ class S3BucketDeleterTest {
   @Test
   fun `delete should handle non-existent bucket gracefully`() = runTest {
     // given
-    val resource = S3Bucket(BucketName("non-existent-bucket"))
+    val resource = S3Bucket("non-existent-bucket")
     // when/then - should not throw
     underTest.delete(resource)
   }
@@ -79,7 +79,7 @@ class S3BucketDeleterTest {
     }
     val bucket = S3ClientStub.BucketStub("large-bucket", objects = objects)
     s3Client.buckets.add(bucket)
-    val resource = S3Bucket(BucketName("large-bucket"))
+    val resource = S3Bucket("large-bucket")
     // when
     underTest.delete(resource)
     // then
@@ -108,7 +108,7 @@ class S3BucketDeleterTest {
     // given
     val bucket = S3ClientStub.BucketStub("test-bucket")
     s3Client.buckets.add(bucket)
-    val resource = S3Bucket(BucketName("test-bucket"))
+    val resource = S3Bucket("test-bucket")
     // Simulate bucket being deleted externally
     s3Client.buckets.clear()
     // when/then - should not throw
@@ -119,7 +119,7 @@ class S3BucketDeleterTest {
   @Test
   fun `resource should have correct type`() = runTest {
     // given
-    val bucket = S3Bucket(BucketName("test"))
+    val bucket = S3Bucket("test")
     // then
     bucket.type.shouldBe("S3Bucket")
   }
@@ -127,7 +127,7 @@ class S3BucketDeleterTest {
   @Test
   fun `resource id should be bucket name`() = runTest {
     // given
-    val bucketName = BucketName("my-bucket")
+    val bucketName = "my-bucket"
     val bucket = S3Bucket(bucketName)
     // then
     bucket.id.value.shouldBe("arn:aws:s3:::my-bucket")

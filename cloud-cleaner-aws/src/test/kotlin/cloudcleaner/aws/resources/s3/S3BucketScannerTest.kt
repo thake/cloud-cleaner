@@ -30,7 +30,7 @@ class S3BucketScannerTest {
     // then
     val actualBuckets = actualFlow.toList()
     actualBuckets.shouldHaveSize(10)
-    actualBuckets.map { it.bucketName.value }.shouldContainExactlyInAnyOrder(
+    actualBuckets.map { it.bucketName }.shouldContainExactlyInAnyOrder(
         (0..9).map { "bucket$it" }
     )
   }
@@ -46,7 +46,7 @@ class S3BucketScannerTest {
     // then
     val actualBuckets = actualFlow.toList()
     actualBuckets.shouldHaveSize(1)
-    actualBuckets.first().bucketName.value shouldBe "bucketB"
+    actualBuckets.first().bucketName shouldBe "bucketB"
   }
 
   @Test

@@ -19,15 +19,12 @@ import cloudcleaner.resources.Resource
 import cloudcleaner.resources.ResourceDefinition
 import cloudcleaner.resources.ResourceDeleter
 import cloudcleaner.resources.ResourceScanner
-import cloudcleaner.resources.StringId
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlin.time.Duration.Companion.milliseconds
 
 val logger = KotlinLogging.logger {}
-
-typealias BucketName = StringId
 
 private const val TYPE = "S3Bucket"
 
@@ -62,8 +59,7 @@ class S3BucketScanner(private val s3Client: S3Client, val region: String) : Reso
       }.collect { response ->
         response.buckets?.forEach { bucket ->
           val name = bucket.name ?: return@forEach
-          val bucketName = BucketName(name)
-          emit(S3Bucket(bucketName = bucketName))
+          emit(S3Bucket(bucketName = name))
         }
       }
     } catch (e: Exception) {
@@ -76,7 +72,7 @@ class S3BucketScanner(private val s3Client: S3Client, val region: String) : Reso
 class S3BucketDeleter(private val s3Client: S3Client) : ResourceDeleter {
   override suspend fun delete(resource: Resource) {
     val bucket = resource as? S3Bucket ?: throw IllegalArgumentException("Resource not an S3Bucket")
-    val bucketName = bucket.bucketName.value
+    val bucketName = bucket.bucketName
 
     try {
       if (!bucketExists(bucketName)) {
@@ -166,16 +162,16 @@ class S3BucketDeleter(private val s3Client: S3Client) : ResourceDeleter {
 }
 
 data class S3Bucket(
-    val bucketName: BucketName,
+    val bucketName: String,
 ) : Resource {
   override val id: Arn
     get() = Arn("arn:aws:s3:::$bucketName")
 
   override val containedResources: Set<Id> = emptySet()
   override val dependsOn: Set<Id> = emptySet()
-  override val name: String = bucketName.value
+  override val name: String = bucketName
   override val type: String = TYPE
   override val properties: Map<String, String> = emptyMap()
 
-  override fun toString(): String = bucketName.value
+  override fun toString(): String = bucketName
 }
