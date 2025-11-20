@@ -12,7 +12,6 @@ import cloudcleaner.resources.Resource
 import cloudcleaner.resources.ResourceDefinition
 import cloudcleaner.resources.ResourceDeleter
 import cloudcleaner.resources.ResourceScanner
-import cloudcleaner.resources.StringId
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -20,13 +19,15 @@ import kotlin.time.Duration.Companion.milliseconds
 
 val cloudWatchLogGroupLogger = KotlinLogging.logger {}
 
-typealias LogGroupName = StringId
+data class LogGroupName(val value: String) : Id {
+  override fun toString() = value
+}
 
 private const val TYPE = "LogGroup"
 
 data class CloudWatchLogGroup(
     val logGroupName: LogGroupName,
-    val logGroupArn: Arn?,
+    val logGroupArn: Arn,
 ) : Resource {
   override val id: Id = logGroupName
   override val name: String = logGroupName.value
@@ -35,7 +36,7 @@ data class CloudWatchLogGroup(
   override val dependsOn: Set<Id> = emptySet()
   override val containedResources: Set<Id> = emptySet()
 
-  override fun toString() = logGroupName.value
+  override fun toString() = name
 }
 
 class CloudWatchLogGroupResourceDefinitionFactory : AwsResourceDefinitionFactory<CloudWatchLogGroup> {
@@ -67,12 +68,12 @@ class CloudWatchLogGroupScanner(private val cloudWatchLogsClient: CloudWatchLogs
     cloudWatchLogsClient.describeLogGroupsPaginated {}.collect { response ->
       response.logGroups?.forEach { logGroup ->
         val logGroupName = logGroup.logGroupName ?: return@forEach
-        val logGroupArn = logGroup.arn?.takeIf { it.isNotBlank() }?.let { Arn(it) }
+        val logGroupArn = logGroup.arn?: return@forEach
 
         emit(
             CloudWatchLogGroup(
                 logGroupName = LogGroupName(logGroupName),
-                logGroupArn = logGroupArn,
+                logGroupArn = Arn(logGroupArn),
             ),
         )
       }
@@ -90,11 +91,11 @@ class CloudWatchLogGroupDeleter(private val cloudWatchLogsClient: CloudWatchLogs
       cloudWatchLogsClient.deleteLogGroup { logGroupName = logGroup.logGroupName.value }
     } catch (_: ResourceNotFoundException) {
       cloudWatchLogGroupLogger.debug {
-        "Deletion failed because CloudWatch log group ${logGroup.logGroupName.value} already has been deleted."
+        "Deletion failed because CloudWatch log group ${logGroup.logGroupName} already has been deleted."
       }
     } catch (e: Exception) {
       cloudWatchLogGroupLogger.error(e) {
-        "Failed to delete CloudWatch log group ${logGroup.logGroupName.value}: ${e.message}"
+        "Failed to delete CloudWatch log group ${logGroup.logGroupName}: ${e.message}"
       }
       throw e
     }

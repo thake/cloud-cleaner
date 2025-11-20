@@ -1,5 +1,6 @@
 package cloudcleaner.aws.resources.cloudwatch
 
+import cloudcleaner.aws.resources.Arn
 import cloudcleaner.aws.resources.cloudwatch.CloudWatchLogsClientStub.LogGroupStub
 import cloudcleaner.resources.StringId
 import io.kotest.assertions.throwables.shouldThrow
@@ -16,7 +17,7 @@ class CloudWatchLogGroupDeleterTest {
     // given
     val logGroup = CloudWatchLogGroup(
         logGroupName = LogGroupName("/aws/lambda/my-function"),
-        logGroupArn = null
+        logGroupArn = Arn("arn:aws:logs:region:account-id:log-group:/aws/lambda/my-function")
     )
     cloudWatchLogsClient.logGroups.add(
         LogGroupStub(
@@ -52,7 +53,7 @@ class CloudWatchLogGroupDeleterTest {
     // given
     val logGroup = CloudWatchLogGroup(
         logGroupName = LogGroupName("/aws/lambda/non-existent"),
-        logGroupArn = null
+        logGroupArn = Arn("arn:aws:logs:region:account-id:log-group:/aws/lambda/my-function2")
     )
 
     // when/then - should not throw
@@ -64,11 +65,11 @@ class CloudWatchLogGroupDeleterTest {
     // given
     val logGroup1 = CloudWatchLogGroup(
         logGroupName = LogGroupName("/aws/lambda/function-1"),
-        logGroupArn = null
+        logGroupArn = Arn("arn:aws:logs:region:account-id:log-group:/aws/lambda/my-function")
     )
     val logGroup2 = CloudWatchLogGroup(
         logGroupName = LogGroupName("/aws/lambda/function-2"),
-        logGroupArn = null
+        logGroupArn = Arn("arn:aws:logs:region:account-id:log-group:/aws/lambda/my-function2")
     )
 
     cloudWatchLogsClient.logGroups.add(LogGroupStub(logGroup1.logGroupName.value))
@@ -87,11 +88,11 @@ class CloudWatchLogGroupDeleterTest {
     // given
     val logGroup1 = CloudWatchLogGroup(
         logGroupName = LogGroupName("/aws/lambda/function-1"),
-        logGroupArn = null
+        logGroupArn = Arn("arn:aws:logs:region:account-id:log-group:/aws/lambda/my-function")
     )
     val logGroup2 = CloudWatchLogGroup(
         logGroupName = LogGroupName("/aws/lambda/function-2"),
-        logGroupArn = null
+        logGroupArn = Arn("arn:aws:logs:region:account-id:log-group:/aws/lambda/my-function2")
     )
 
     cloudWatchLogsClient.logGroups.add(LogGroupStub(logGroup1.logGroupName.value))

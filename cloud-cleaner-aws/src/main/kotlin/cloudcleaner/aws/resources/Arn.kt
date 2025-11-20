@@ -3,6 +3,7 @@ package cloudcleaner.aws.resources
 import aws.sdk.kotlin.services.cloudformation.model.StackResourceSummary
 import cloudcleaner.aws.resources.cloudformation.StackName
 import cloudcleaner.aws.resources.cloudformation.extractStackNameFromStackId
+import cloudcleaner.aws.resources.cloudwatch.LogGroupName
 import cloudcleaner.aws.resources.route53.HostedZoneId
 import cloudcleaner.resources.Id
 import cloudcleaner.resources.StringId
@@ -30,6 +31,7 @@ fun idFromCloudFormationStackResourceOrNull(
     "AWS::ECR::Repository" -> StringId("$accountId.dkr.ecr.$region.amazonaws.com/$physicalId")
     "AWS::S3::Bucket" -> Arn("arn:aws:s3:::$physicalId")
     "AWS::S3::BucketPolicy" -> null
+    "AWS::Logs::LogGroup" -> LogGroupName(physicalId)
     "AWS::Route53::HostedZone" -> HostedZoneId(physicalId)
     "AWS::CloudFormation::Stack" -> StackName(extractStackNameFromStackId(physicalId))
     else -> StringId(physicalId)
