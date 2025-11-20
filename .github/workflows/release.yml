@@ -19,7 +19,7 @@ jobs:
           distribution: 'graalvm'
           java-version: '21'
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v5
       - name: Build with Gradle Wrapper
         run: ./gradlew build
       - name: Make dist dir
@@ -58,7 +58,7 @@ jobs:
         distribution: 'graalvm'
         java-version: '21'
     - name: Setup Gradle
-      uses: gradle/actions/setup-gradle@v4
+      uses: gradle/actions/setup-gradle@v5
     - name: Build with Gradle Wrapper
       run: ./gradlew nativeCompile
     - name: Make dist dir
