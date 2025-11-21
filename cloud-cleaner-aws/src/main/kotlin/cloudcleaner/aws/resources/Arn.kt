@@ -4,6 +4,7 @@ import aws.sdk.kotlin.services.cloudformation.model.StackResourceSummary
 import cloudcleaner.aws.resources.cloudformation.StackName
 import cloudcleaner.aws.resources.cloudformation.extractStackNameFromStackId
 import cloudcleaner.aws.resources.cloudwatch.LogGroupName
+import cloudcleaner.aws.resources.dynamodb.DynamoDbTableName
 import cloudcleaner.aws.resources.ecr.EcrRepositoryName
 import cloudcleaner.aws.resources.lambda.LambdaFunctionName
 import cloudcleaner.aws.resources.route53.HostedZoneId
@@ -38,6 +39,8 @@ fun idFromCloudFormationStackResourceOrNull(
     "AWS::CloudFormation::Stack" -> StackName(extractStackNameFromStackId(physicalId), region)
     "AWS::ECR::Repository" -> EcrRepositoryName(physicalId, region)
     "AWS::Lambda::Function" -> LambdaFunctionName(physicalId, region)
+    "AWS::DynamoDB::Table",
+    "AWS::DynamoDB::GlobalTable" -> DynamoDbTableName(physicalId, region)
     else -> StringId(physicalId)
   }
 }

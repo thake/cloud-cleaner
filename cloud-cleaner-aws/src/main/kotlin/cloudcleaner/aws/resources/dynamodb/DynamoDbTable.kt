@@ -17,7 +17,6 @@ import cloudcleaner.resources.Resource
 import cloudcleaner.resources.ResourceDefinition
 import cloudcleaner.resources.ResourceDeleter
 import cloudcleaner.resources.ResourceScanner
-import cloudcleaner.resources.StringId
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -25,7 +24,9 @@ import kotlin.time.Duration.Companion.milliseconds
 
 val logger = KotlinLogging.logger {}
 
-typealias TableName = StringId
+data class DynamoDbTableName(val name: String, val region: String) : Id {
+  override fun toString() = "$name ($region)"
+}
 
 private const val TYPE = "DynamoDbTable"
 
@@ -46,17 +47,17 @@ class DynamoDbTableResourceDefinitionFactory : AwsResourceDefinitionFactory<Dyna
     return ResourceDefinition(
         type = TYPE,
         resourceDeleter = DynamoDbTableDeleter(client),
-        resourceScanner = DynamoDbTableScanner(client),
+        resourceScanner = DynamoDbTableScanner(client, awsConnectionInformation.region),
         close = { client.close() },
     )
   }
 }
 
-class DynamoDbTableScanner(private val dynamoDbClient: DynamoDbClient) : ResourceScanner<DynamoDbTable> {
+class DynamoDbTableScanner(private val dynamoDbClient: DynamoDbClient, val region: String) : ResourceScanner<DynamoDbTable> {
   override fun scan(): Flow<DynamoDbTable> = flow {
     dynamoDbClient.listTablesPaginated().collect { response ->
       response.tableNames?.forEach { tableName ->
-        val tableNameId = TableName(tableName)
+        val tableNameId = DynamoDbTableName(tableName, region)
         try {
           val tableDescription = dynamoDbClient.describeTable(DescribeTableRequest { this.tableName = tableName })
 
@@ -86,59 +87,47 @@ class DynamoDbTableDeleter(private val dynamoDbClient: DynamoDbClient) : Resourc
       // Check current table status
       val tableDescription =
           try {
-            dynamoDbClient.describeTable(DescribeTableRequest { tableName = table.tableName.value })
+            dynamoDbClient.describeTable(DescribeTableRequest { tableName = table.name })
           } catch (_: ResourceNotFoundException) {
-            logger.info { "DynamoDB table ${table.tableName.value} has already been deleted. Ignoring." }
             return
           }
 
       val currentTable = tableDescription.table
       if (currentTable?.tableStatus == TableStatus.Deleting) {
-        logger.info { "DynamoDB table ${table.tableName.value} is already being deleted, waiting for completion" }
-        dynamoDbClient.waitUntilTableNotExists { tableName = table.tableName.value }
+        dynamoDbClient.waitUntilTableNotExists { tableName = table.name }
         return
       }
 
-      // Disable deletion protection if enabled
       if (currentTable?.deletionProtectionEnabled == true) {
-        logger.info { "Disabling deletion protection for DynamoDB table ${table.tableName.value}" }
         dynamoDbClient.updateTable(
             UpdateTableRequest {
-              tableName = table.tableName.value
+              tableName = table.name
               deletionProtectionEnabled = false
             })
-
-        // Wait for the update to complete
-        dynamoDbClient.waitUntilTableExists { tableName = table.tableName.value }
+        dynamoDbClient.waitUntilTableExists { tableName = table.name }
       }
 
-      // Delete the table
-      logger.info { "Deleting DynamoDB table ${table.tableName.value}" }
-      dynamoDbClient.deleteTable { tableName = table.tableName.value }
-
-      // Wait for deletion to complete
-      dynamoDbClient.waitUntilTableNotExists { tableName = table.tableName.value }
+      dynamoDbClient.deleteTable { tableName = table.name }
+      dynamoDbClient.waitUntilTableNotExists { tableName = table.name }
     } catch (e: Exception) {
-      logger.error(e) { "Failed to delete DynamoDB table ${table.tableName.value}: ${e.message}" }
+      logger.error(e) { "Failed to delete DynamoDB table ${table.name}: ${e.message}" }
       throw e
     }
   }
 }
 
 data class DynamoDbTable(
-    val tableName: TableName,
-    val tableArn: Arn?,
-    val deletionProtectionEnabled: Boolean,
+  val tableName: DynamoDbTableName,
+  val tableArn: Arn?,
+  val deletionProtectionEnabled: Boolean,
 ) : Resource {
-  override val id: Id
-    get() = tableName
-
+  override val id: Id = tableName
   override val containedResources: Set<Id> = emptySet()
   override val dependsOn: Set<Id> = emptySet()
-  override val name: String = tableName.value
+  override val name: String = tableName.name
   override val type: String = TYPE
   override val properties: Map<String, String> =
       mapOf("deletionProtectionEnabled" to deletionProtectionEnabled.toString(), "tableArn" to (tableArn?.value ?: ""))
 
-  override fun toString() = tableName.value
+  override fun toString() = tableName.toString()
 }

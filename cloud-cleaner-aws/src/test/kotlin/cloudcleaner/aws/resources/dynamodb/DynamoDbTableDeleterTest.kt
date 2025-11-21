@@ -2,6 +2,7 @@ package cloudcleaner.aws.resources.dynamodb
 
 import aws.sdk.kotlin.services.dynamodb.model.DynamoDbException
 import aws.sdk.kotlin.services.dynamodb.model.TableStatus
+import cloudcleaner.aws.resources.REGION
 import cloudcleaner.aws.resources.dynamodb.DynamoDbClientStub.TableStub
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.nulls.shouldBeNull
@@ -21,11 +22,11 @@ class DynamoDbTableDeleterTest {
   fun `delete should successfully delete a table`() = runTest {
     // given
     val table = DynamoDbTable(
-        tableName = TableName("test-table"),
+        tableName = DynamoDbTableName("test-table", REGION),
         tableArn = null,
         deletionProtectionEnabled = false,
     )
-    dynamoDbClient.tables.add(TableStub(table.tableName.value))
+    dynamoDbClient.tables.add(TableStub(table.name))
 
     // when
     underTest.delete(table)
@@ -38,7 +39,7 @@ class DynamoDbTableDeleterTest {
   fun `delete should ignore already deleted table`() = runTest {
     // given
     val table = DynamoDbTable(
-        tableName = TableName("does-not-exist-table"),
+        tableName = DynamoDbTableName("does-not-exist-table", REGION),
         tableArn = null,
         deletionProtectionEnabled = false,
     )
@@ -51,7 +52,7 @@ class DynamoDbTableDeleterTest {
   fun `delete should disable deletion protection before deleting`() = runTest {
     // given
     val table = DynamoDbTable(
-        tableName = TableName("protected-table"),
+        tableName = DynamoDbTableName("protected-table", REGION),
         tableArn = null,
         deletionProtectionEnabled = true,
     )
@@ -70,7 +71,7 @@ class DynamoDbTableDeleterTest {
     withContext(Dispatchers.Default) {
       // given
       val table = DynamoDbTable(
-          tableName = TableName("deleting-table"),
+          tableName = DynamoDbTableName("deleting-table", REGION),
           tableArn = null,
           deletionProtectionEnabled = false,
       )
@@ -111,11 +112,11 @@ class DynamoDbTableDeleterTest {
   fun `delete should propagate exceptions from DynamoDB client`() = runTest {
     // given
     val table = DynamoDbTable(
-        tableName = TableName("test-table"),
+        tableName = DynamoDbTableName("test-table", REGION),
         tableArn = null,
         deletionProtectionEnabled = false,
     )
-    dynamoDbClient.tables.add(TableStub(table.tableName.value))
+    dynamoDbClient.tables.add(TableStub(table.name))
     dynamoDbClient.deleteFailsWithError = true
 
     // when & then
@@ -128,7 +129,7 @@ class DynamoDbTableDeleterTest {
   fun `delete should handle update failure when disabling protection`() = runTest {
     // given
     val table = DynamoDbTable(
-        tableName = TableName("protected-table"),
+        tableName = DynamoDbTableName("protected-table", REGION),
         tableArn = null,
         deletionProtectionEnabled = true,
     )
@@ -145,11 +146,11 @@ class DynamoDbTableDeleterTest {
   fun `delete should handle table in updating state`() = runTest {
     // given
     val table = DynamoDbTable(
-        tableName = TableName("updating-table"),
+        tableName = DynamoDbTableName("updating-table", REGION),
         tableArn = null,
         deletionProtectionEnabled = false,
     )
-    dynamoDbClient.tables.add(TableStub(table.tableName.value, tableStatus = TableStatus.Updating))
+    dynamoDbClient.tables.add(TableStub(table.name, tableStatus = TableStatus.Updating))
 
     // when
     underTest.delete(table)

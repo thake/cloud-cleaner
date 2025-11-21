@@ -14,7 +14,7 @@ import kotlin.test.Test
 
 class DynamoDbTableScannerTest {
   private val dynamoDbClient = DynamoDbClientStub()
-  private val underTest = DynamoDbTableScanner(dynamoDbClient)
+  private val underTest = DynamoDbTableScanner(dynamoDbClient, REGION)
 
   @Test
   fun `scan should return empty list when no tables are present`() = runTest {
@@ -34,7 +34,7 @@ class DynamoDbTableScannerTest {
     // then
     val actualTables = actualFlow.toList()
     actualTables.shouldHaveSize(10)
-    actualTables.map { it.tableName.value }.shouldContainExactlyInAnyOrder(
+    actualTables.map { it.name }.shouldContainExactlyInAnyOrder(
       (0..9).map { "table$it" }
     )
   }
@@ -52,7 +52,7 @@ class DynamoDbTableScannerTest {
     // then
     val actualTables = actualFlow.toList()
     actualTables.shouldHaveSize(1)
-    actualTables.first().tableName.value.shouldBe("table2")
+    actualTables.first().name.shouldBe("table2")
   }
 
   @Test
@@ -69,10 +69,10 @@ class DynamoDbTableScannerTest {
     val actualTables = actualFlow.toList()
     actualTables.shouldHaveSize(2)
 
-    val table1 = actualTables.first { it.tableName.value == "table1" }
+    val table1 = actualTables.first { it.name == "table1" }
     table1.deletionProtectionEnabled.shouldBe(true)
 
-    val table2 = actualTables.first { it.tableName.value == "table2" }
+    val table2 = actualTables.first { it.name == "table2" }
     table2.deletionProtectionEnabled.shouldBe(false)
   }
 
