@@ -5,6 +5,7 @@ import cloudcleaner.aws.resources.cloudformation.StackName
 import cloudcleaner.aws.resources.cloudformation.extractStackNameFromStackId
 import cloudcleaner.aws.resources.cloudwatch.LogGroupName
 import cloudcleaner.aws.resources.ecr.EcrRepositoryName
+import cloudcleaner.aws.resources.lambda.LambdaFunctionName
 import cloudcleaner.aws.resources.route53.HostedZoneId
 import cloudcleaner.resources.Id
 import cloudcleaner.resources.StringId
@@ -31,10 +32,12 @@ fun idFromCloudFormationStackResourceOrNull(
     "AWS::SSM::Parameter" -> Arn("arn:aws:ssm:$region:$accountId:parameter$physicalId")
     "AWS::S3::Bucket" -> Arn("arn:aws:s3:::$physicalId")
     "AWS::S3::BucketPolicy" -> null
+    "Custom::LogRetention",
     "AWS::Logs::LogGroup" -> LogGroupName(physicalId, region)
     "AWS::Route53::HostedZone" -> HostedZoneId(physicalId)
     "AWS::CloudFormation::Stack" -> StackName(extractStackNameFromStackId(physicalId), region)
     "AWS::ECR::Repository" -> EcrRepositoryName(physicalId, region)
+    "AWS::Lambda::Function" -> LambdaFunctionName(physicalId, region)
     else -> StringId(physicalId)
   }
 }
