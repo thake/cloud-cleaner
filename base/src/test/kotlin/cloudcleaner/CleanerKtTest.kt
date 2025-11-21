@@ -93,7 +93,62 @@ class CleanerKtTest {
       receivedElements shouldContainOnly listOf(c)
     }
   }
-}
+  @Test
+  fun `produceDeletableResources should not consider contained resources when checking for dependencies`() = runTest {
+    coroutineScope {
+      val b = TestResource("role")
+      val a = TestResource("stack", dependsOn = setOf("role"))
+      val c = TestResource("roleStack", contains = setOf("role"))
+      val map = listOf(a, b, c).associateBy { it.id }
+
+      val deletableResources = produceDeletableResources(map)
+
+      val receivedElements = mutableListOf<Resource>()
+      for(element in deletableResources) {
+        receivedElements.add(element)
+      }
+      receivedElements shouldContainOnly listOf(a)
+    }
+  }
+
+  @Test
+  fun `produceDeletableResources should delete container with interdependent contained resources`() = runTest {
+    coroutineScope {
+      val role = TestResource("role")
+      val policy = TestResource("rolePolicy", dependsOn = setOf("role"))
+      val stack = TestResource("stack", contains = setOf("role", "rolePolicy"))
+      val map = listOf(stack, role, policy).associateBy { it.id }
+
+      val deletableResources = produceDeletableResources(map)
+
+      val receivedElements = mutableListOf<Resource>()
+      for(element in deletableResources) {
+        receivedElements.add(element)
+      }
+      receivedElements shouldContainOnly listOf(stack)
+    }
+  }
+  @Test
+  fun `produceDeletableResources should delete container with deep interdependent contained resources`() = runTest {
+    val role = TestResource("role")
+    val policy = TestResource("rolePolicy", dependsOn = setOf("role"))
+    val stack1 = TestResource("stack1", contains = setOf("role", "nestedStack1"))
+    val nestedStack1 = TestResource("nestedStack1", contains = setOf("nestedStack2"))
+    val nestedStack2 = TestResource("nestedStack2", contains = setOf("rolePolicy"))
+    val map = listOf(stack1, nestedStack1, nestedStack2, role, policy).associateBy { it.id }
+    // when
+    val deletableResources = produceDeletableResources(map)
+
+    // then
+    val receivedElements = mutableListOf<Resource>()
+    for(element in deletableResources) {
+      receivedElements.add(element)
+    }
+    receivedElements shouldContainOnly listOf(stack1)
+
+  }
+
+  }
 
 fun <T> ReceiveChannel<T>.shouldBeEmpty() = this should beEmpty()
 fun <T> beEmpty() = object : Matcher<ReceiveChannel<T>> {

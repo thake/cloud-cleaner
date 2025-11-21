@@ -69,7 +69,7 @@ class Route53HostedZoneResourceDefinitionFactory : AwsResourceDefinitionFactory<
 class Route53HostedZoneScanner(private val route53Client: Route53Client) : ResourceScanner<Route53HostedZone> {
   override fun scan(): Flow<Route53HostedZone> = flow {
     route53Client
-        .listHostedZonesPaginated {}
+        .listHostedZonesPaginated()
         .collect { response ->
           response.hostedZones.forEach { hostedZone ->
             val hostedZoneId = hostedZone.id

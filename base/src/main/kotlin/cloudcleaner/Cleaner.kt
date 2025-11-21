@@ -157,11 +157,46 @@ fun CoroutineScope.produceDeletableResources(pendingDeletions: Map<Id, Resource>
   allDependencies.forEach { dep -> resourcesToBeDeleted.remove(dep) }
   // handle resources that are contained in other resources
   allContainedResources.forEach { contained -> resourcesToBeDeleted.remove(contained) }
-  // handle indirect dependencies
+  // handle indirect dependencies - only remove containers if they contain resources that are depended upon from outside
   resourcesToBeDeleted
-      .filterValues { resource -> resource.containedResources.any { it in allDependencies } }
+      .filterValues { container ->
+        // Get all transitively contained resources
+        val transitivelyContained = getAllContained(container, pendingDeletions)
+        // Check if any transitively contained resource is depended upon by resources outside the container
+        transitivelyContained.any { containedId ->
+          // Check if any resource outside the container depends on this contained resource
+          pendingDeletions.values.any { resource ->
+            // Only consider resources that are not transitively contained in this container
+            resource.id !in transitivelyContained &&
+            resource.id != container.id &&
+            containedId in resource.dependsOn
+          }
+        }
+      }
       .keys
       .forEach { resourcesToBeDeleted.remove(it) }
   logger.info { "New Iteration: ${resourcesToBeDeleted.size} dependencies to be deleted (total remaining: ${pendingDeletions.size})." }
   resourcesToBeDeleted.values.forEach { send(it) }
 }
+
+/**
+ * Get all resources transitively contained within a container
+ */
+private fun getAllContained(container: Resource, allResources: Map<Id, Resource>): Set<Id> {
+  val result = mutableSetOf<Id>()
+  val toProcess = ArrayDeque(container.containedResources.toList())
+
+  while (toProcess.isNotEmpty()) {
+    val current = toProcess.removeFirst()
+    if (result.add(current)) {
+      // If this was newly added, process its children
+      val resource = allResources[current]
+      if (resource != null) {
+        toProcess.addAll(resource.containedResources)
+      }
+    }
+  }
+
+  return result
+}
+
