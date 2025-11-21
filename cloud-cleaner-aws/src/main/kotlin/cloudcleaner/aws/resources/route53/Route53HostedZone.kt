@@ -98,7 +98,7 @@ class Route53HostedZoneDeleter(private val route53Client: Route53Client) : Resou
     val hostedZone = resource as? Route53HostedZone ?: throw IllegalArgumentException("Resource not a Route53HostedZone")
 
     try {
-      deleteResourceRecordSets(hostedZone.id.value)
+      deleteResourceRecordSets(hostedZone.id.value, hostedZone.hostedZoneName)
       route53Client.deleteHostedZone { id = hostedZone.id.value }
     } catch (e: ServiceException) {
       if (e.message.contains("NoSuchHostedZone") || e.message.contains("not found", ignoreCase = true)) {
@@ -110,14 +110,14 @@ class Route53HostedZoneDeleter(private val route53Client: Route53Client) : Resou
     }
   }
 
-  private suspend fun deleteResourceRecordSets(hostedZoneId: String) {
+  private suspend fun deleteResourceRecordSets(hostedZoneId: String, hostedZoneName: String) {
     val recordSets = route53Client.listResourceRecordSets { this.hostedZoneId = hostedZoneId }
 
     val recordSetsToDelete =
         recordSets.resourceRecordSets.filter { recordSet ->
           // Don't delete the default NS and SOA records
           val type = recordSet.type
-          !(type == RrType.Ns || type == RrType.Soa)
+          !(recordSet.name == hostedZoneName && (type == RrType.Ns || type == RrType.Soa))
         }
 
     if (recordSetsToDelete.isNotEmpty()) {

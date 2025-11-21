@@ -1,5 +1,6 @@
 package cloudcleaner.aws.resources.route53
 
+import aws.sdk.kotlin.services.route53.model.ResourceRecord
 import aws.sdk.kotlin.services.route53.model.ResourceRecordSet
 import aws.sdk.kotlin.services.route53.model.RrType
 import cloudcleaner.aws.resources.route53.Route53ClientStub.HostedZoneStub
@@ -62,14 +63,14 @@ class Route53HostedZoneDeleterTest {
           name = "www.example.com."
           type = RrType.A
           ttl = 300
-          resourceRecords = listOf(aws.sdk.kotlin.services.route53.model.ResourceRecord { value = "192.168.1.1" })
+          resourceRecords = listOf(ResourceRecord { value = "192.168.1.1" })
         })
     zoneStub.resourceRecordSets.add(
         ResourceRecordSet {
           name = "mail.example.com."
           type = RrType.A
           ttl = 300
-          resourceRecords = listOf(aws.sdk.kotlin.services.route53.model.ResourceRecord { value = "192.168.1.2" })
+          resourceRecords = listOf(ResourceRecord { value = "192.168.1.2" })
         })
 
     route53Client.hostedZones.add(zoneStub)
@@ -108,10 +109,8 @@ class Route53HostedZoneDeleterTest {
             hostedZoneName = "example2.com.",
         )
 
-    route53Client.hostedZones.add(
-        HostedZoneStub(id = hostedZone1.id.value, name = hostedZone1.hostedZoneName, callerReference = "ref-1"))
-    route53Client.hostedZones.add(
-        HostedZoneStub(id = hostedZone2.id.value, name = hostedZone2.hostedZoneName, callerReference = "ref-2"))
+    route53Client.hostedZones.add(HostedZoneStub(id = hostedZone1.id.value, name = hostedZone1.hostedZoneName, callerReference = "ref-1"))
+    route53Client.hostedZones.add(HostedZoneStub(id = hostedZone2.id.value, name = hostedZone2.hostedZoneName, callerReference = "ref-2"))
 
     // when
     underTest.delete(hostedZone1)
@@ -135,10 +134,8 @@ class Route53HostedZoneDeleterTest {
             hostedZoneName = "example2.com.",
         )
 
-    route53Client.hostedZones.add(
-        HostedZoneStub(id = hostedZone1.id.value, name = hostedZone1.hostedZoneName, callerReference = "ref-1"))
-    route53Client.hostedZones.add(
-        HostedZoneStub(id = hostedZone2.id.value, name = hostedZone2.hostedZoneName, callerReference = "ref-2"))
+    route53Client.hostedZones.add(HostedZoneStub(id = hostedZone1.id.value, name = hostedZone1.hostedZoneName, callerReference = "ref-1"))
+    route53Client.hostedZones.add(HostedZoneStub(id = hostedZone2.id.value, name = hostedZone2.hostedZoneName, callerReference = "ref-2"))
 
     // when
     underTest.delete(hostedZone1)
@@ -149,11 +146,30 @@ class Route53HostedZoneDeleterTest {
   }
 
   @Test
-  fun `delete should preserve NS and SOA records during cleanup`() = runTest {
+  fun `delete should delete NS and SOA records with other name during cleanup`() = runTest {
     // given
     val hostedZone = Route53HostedZone(id = HostedZoneId("Z1234567890ABC"), hostedZoneName = "example.com.")
     val zoneStub = HostedZoneStub(id = hostedZone.id.value, name = hostedZone.hostedZoneName, callerReference = "test-ref")
-
+    zoneStub.resourceRecordSets.add(
+        ResourceRecordSet {
+          name = "my-name"
+          type = RrType.Ns
+          ttl = 172800
+          resourceRecords =
+              listOf(
+                  ResourceRecord { value = "ns-1.awsdns-1.com." },
+              )
+        })
+    zoneStub.resourceRecordSets.add(
+        ResourceRecordSet {
+          name = "my-name"
+          type = RrType.Soa
+          ttl = 172800
+          resourceRecords =
+              listOf(
+                  ResourceRecord { value = "ns-1.awsdns-1.com." },
+              )
+        })
     route53Client.hostedZones.add(zoneStub)
 
     // when
