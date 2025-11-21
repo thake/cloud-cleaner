@@ -119,7 +119,7 @@ class EcrRepositoryDeleter(private val ecrClient: EcrClient) : ResourceDeleter {
   }
 }
 data class EcrRepositoryName(val name: String, val region: String): Id {
-  override fun toString(): String = name
+  override fun toString(): String = "$name ($region)"
 }
 data class EcrRepository(
     val repositoryName: EcrRepositoryName,

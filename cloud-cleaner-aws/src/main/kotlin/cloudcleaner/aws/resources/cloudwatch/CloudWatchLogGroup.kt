@@ -20,7 +20,7 @@ import kotlin.time.Duration.Companion.milliseconds
 val cloudWatchLogGroupLogger = KotlinLogging.logger {}
 
 data class LogGroupName(val value: String, val region: String) : Id {
-  override fun toString() = value
+  override fun toString() = "$value ($region)"
 }
 
 private const val TYPE = "LogGroup"

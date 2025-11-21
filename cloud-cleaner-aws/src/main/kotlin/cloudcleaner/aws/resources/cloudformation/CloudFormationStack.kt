@@ -27,7 +27,7 @@ import kotlin.time.Duration.Companion.milliseconds
 val logger = KotlinLogging.logger {}
 
 data class StackName(val name: String, val region: String) : Id {
-  override fun toString() = name
+  override fun toString() = "$name ($region)"
 }
 
 private const val TYPE = "CloudFormationStack"
@@ -161,5 +161,5 @@ data class CloudFormationStack(
   override val type: String = TYPE
   override val properties: Map<String, String> = emptyMap()
 
-  override fun toString() = name
+  override fun toString() = id.toString()
 }
