@@ -13,7 +13,7 @@ import aws.smithy.kotlin.runtime.retries.getOrThrow
 import cloudcleaner.aws.resources.Arn
 import cloudcleaner.aws.resources.AwsConnectionInformation
 import cloudcleaner.aws.resources.AwsResourceDefinitionFactory
-import cloudcleaner.aws.resources.cloudwatch.LogGroupName
+import cloudcleaner.aws.resources.cloudwatch.CloudWatchLogGroupName
 import cloudcleaner.aws.resources.iam.IamRoleName
 import cloudcleaner.aws.resources.idFromCloudFormationStackResourceOrNull
 import cloudcleaner.aws.resources.lambda.LambdaFunctionName
@@ -86,7 +86,7 @@ class CloudFormationStackScanner(
                     .toMutableSet()
             contains +=
                 contains.filterIsInstance<LambdaFunctionName>().flatMap { listOf(
-                    LogGroupName("/aws/lambda/${it.value}", it.region),
+                    CloudWatchLogGroupName("/aws/lambda/${it.value}", it.region),
                     IamRoleName(it.value)
                 ) }
             val roleDependency = setOfNotNull(stack.roleArn?.let { Arn(it) })

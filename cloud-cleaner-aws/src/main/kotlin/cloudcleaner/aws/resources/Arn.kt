@@ -3,7 +3,7 @@ package cloudcleaner.aws.resources
 import aws.sdk.kotlin.services.cloudformation.model.StackResourceSummary
 import cloudcleaner.aws.resources.cloudformation.StackName
 import cloudcleaner.aws.resources.cloudformation.extractStackNameFromStackId
-import cloudcleaner.aws.resources.cloudwatch.LogGroupName
+import cloudcleaner.aws.resources.cloudwatch.CloudWatchLogGroupName
 import cloudcleaner.aws.resources.dynamodb.DynamoDbTableName
 import cloudcleaner.aws.resources.ecr.EcrRepositoryName
 import cloudcleaner.aws.resources.lambda.LambdaFunctionName
@@ -34,7 +34,7 @@ fun idFromCloudFormationStackResourceOrNull(
     "AWS::S3::Bucket" -> Arn("arn:aws:s3:::$physicalId")
     "AWS::S3::BucketPolicy" -> null
     "Custom::LogRetention",
-    "AWS::Logs::LogGroup" -> LogGroupName(physicalId, region)
+    "AWS::Logs::LogGroup" -> CloudWatchLogGroupName(physicalId, region)
     "AWS::Route53::HostedZone" -> HostedZoneId(physicalId)
     "AWS::CloudFormation::Stack" -> StackName(extractStackNameFromStackId(physicalId), region)
     "AWS::ECR::Repository" -> EcrRepositoryName(physicalId, region)

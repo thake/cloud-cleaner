@@ -19,15 +19,15 @@ import kotlin.time.Duration.Companion.milliseconds
 
 val cloudWatchLogGroupLogger = KotlinLogging.logger {}
 
-data class LogGroupName(val value: String, val region: String) : Id {
+data class CloudWatchLogGroupName(val value: String, val region: String) : Id {
   override fun toString() = "$value ($region)"
 }
 
 private const val TYPE = "LogGroup"
 
 data class CloudWatchLogGroup(
-    val logGroupName: LogGroupName,
-    val logGroupArn: Arn,
+  val logGroupName: CloudWatchLogGroupName,
+  val logGroupArn: Arn,
 ) : Resource {
   override val id: Id = logGroupName
   override val name: String = logGroupName.value
@@ -72,7 +72,7 @@ class CloudWatchLogGroupScanner(private val cloudWatchLogsClient: CloudWatchLogs
 
         emit(
             CloudWatchLogGroup(
-                logGroupName = LogGroupName(logGroupName, region),
+                logGroupName = CloudWatchLogGroupName(logGroupName, region),
                 logGroupArn = Arn(logGroupArn),
             ),
         )

@@ -17,7 +17,7 @@ class CloudWatchLogGroupDeleterTest {
   fun `delete should successfully delete a log group`() = runTest {
     // given
     val logGroup = CloudWatchLogGroup(
-        logGroupName = LogGroupName("/aws/lambda/my-function", REGION),
+        logGroupName = CloudWatchLogGroupName("/aws/lambda/my-function", REGION),
         logGroupArn = Arn("arn:aws:logs:region:account-id:log-group:/aws/lambda/my-function")
     )
     cloudWatchLogsClient.logGroups.add(
@@ -53,7 +53,7 @@ class CloudWatchLogGroupDeleterTest {
   fun `delete should ignore not existing log group`() = runTest {
     // given
     val logGroup = CloudWatchLogGroup(
-        logGroupName = LogGroupName("/aws/lambda/non-existent", REGION),
+        logGroupName = CloudWatchLogGroupName("/aws/lambda/non-existent", REGION),
         logGroupArn = Arn("arn:aws:logs:region:account-id:log-group:/aws/lambda/my-function2")
     )
 
@@ -65,11 +65,11 @@ class CloudWatchLogGroupDeleterTest {
   fun `delete should delete multiple log groups`() = runTest {
     // given
     val logGroup1 = CloudWatchLogGroup(
-        logGroupName = LogGroupName("/aws/lambda/function-1", REGION),
+        logGroupName = CloudWatchLogGroupName("/aws/lambda/function-1", REGION),
         logGroupArn = Arn("arn:aws:logs:region:account-id:log-group:/aws/lambda/my-function")
     )
     val logGroup2 = CloudWatchLogGroup(
-        logGroupName = LogGroupName("/aws/lambda/function-2", REGION),
+        logGroupName = CloudWatchLogGroupName("/aws/lambda/function-2", REGION),
         logGroupArn = Arn("arn:aws:logs:region:account-id:log-group:/aws/lambda/my-function2")
     )
 
@@ -88,11 +88,11 @@ class CloudWatchLogGroupDeleterTest {
   fun `delete should only delete the specified log group`() = runTest {
     // given
     val logGroup1 = CloudWatchLogGroup(
-        logGroupName = LogGroupName("/aws/lambda/function-1", REGION),
+        logGroupName = CloudWatchLogGroupName("/aws/lambda/function-1", REGION),
         logGroupArn = Arn("arn:aws:logs:region:account-id:log-group:/aws/lambda/my-function")
     )
     val logGroup2 = CloudWatchLogGroup(
-        logGroupName = LogGroupName("/aws/lambda/function-2", REGION),
+        logGroupName = CloudWatchLogGroupName("/aws/lambda/function-2", REGION),
         logGroupArn = Arn("arn:aws:logs:region:account-id:log-group:/aws/lambda/my-function2")
     )
 

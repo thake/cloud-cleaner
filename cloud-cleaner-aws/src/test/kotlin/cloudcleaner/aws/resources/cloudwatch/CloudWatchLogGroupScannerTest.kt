@@ -59,7 +59,7 @@ class CloudWatchLogGroupScannerTest {
     val actualLogGroups = actualFlow.toList()
     actualLogGroups.shouldHaveSize(1)
     val actualLogGroup = actualLogGroups.first()
-    actualLogGroup.logGroupName shouldBe LogGroupName("/aws/lambda/my-function", REGION)
+    actualLogGroup.logGroupName shouldBe CloudWatchLogGroupName("/aws/lambda/my-function", REGION)
     actualLogGroup.logGroupArn.value shouldBe "arn:aws:logs:$REGION:$ACCOUNT_ID:log-group:/aws/lambda/my-function"
     actualLogGroup.dependsOn.shouldBeEmpty()
   }
