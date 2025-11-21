@@ -4,6 +4,7 @@ import aws.sdk.kotlin.services.cloudwatchlogs.CloudWatchLogsClient
 import aws.sdk.kotlin.services.cloudwatchlogs.deleteLogGroup
 import aws.smithy.kotlin.runtime.ServiceException
 import cloudcleaner.aws.resources.LocalStack
+import cloudcleaner.aws.resources.REGION
 import cloudcleaner.aws.resources.shouldBeEquivalentTo
 import io.kotest.assertions.throwables.shouldThrow
 import kotlinx.coroutines.test.runTest
@@ -15,7 +16,7 @@ import kotlin.uuid.Uuid
 class CloudWatchLogsClientBehaviorIntegrationTest {
   private val cloudWatchLogsClient = CloudWatchLogsClient {
     endpointUrl = LocalStack.localstackUrl
-    region = "eu-central-1"
+    region = REGION
   }
   private val stub = CloudWatchLogsClientStub()
 

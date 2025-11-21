@@ -19,7 +19,7 @@ import kotlin.time.Duration.Companion.milliseconds
 
 val cloudWatchLogGroupLogger = KotlinLogging.logger {}
 
-data class LogGroupName(val value: String) : Id {
+data class LogGroupName(val value: String, val region: String) : Id {
   override fun toString() = value
 }
 
@@ -56,13 +56,13 @@ class CloudWatchLogGroupResourceDefinitionFactory : AwsResourceDefinitionFactory
     return ResourceDefinition(
         type = TYPE,
         resourceDeleter = CloudWatchLogGroupDeleter(client),
-        resourceScanner = CloudWatchLogGroupScanner(client),
+        resourceScanner = CloudWatchLogGroupScanner(client, awsConnectionInformation.region),
         close = { client.close() },
     )
   }
 }
 
-class CloudWatchLogGroupScanner(private val cloudWatchLogsClient: CloudWatchLogsClient) :
+class CloudWatchLogGroupScanner(private val cloudWatchLogsClient: CloudWatchLogsClient, val region: String) :
     ResourceScanner<CloudWatchLogGroup> {
   override fun scan(): Flow<CloudWatchLogGroup> = flow {
     cloudWatchLogsClient.describeLogGroupsPaginated {}.collect { response ->
@@ -72,7 +72,7 @@ class CloudWatchLogGroupScanner(private val cloudWatchLogsClient: CloudWatchLogs
 
         emit(
             CloudWatchLogGroup(
-                logGroupName = LogGroupName(logGroupName),
+                logGroupName = LogGroupName(logGroupName, region),
                 logGroupArn = Arn(logGroupArn),
             ),
         )

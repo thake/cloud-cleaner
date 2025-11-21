@@ -4,6 +4,7 @@ import aws.sdk.kotlin.services.cloudformation.model.StackResourceSummary
 import cloudcleaner.aws.resources.cloudformation.StackName
 import cloudcleaner.aws.resources.cloudformation.extractStackNameFromStackId
 import cloudcleaner.aws.resources.cloudwatch.LogGroupName
+import cloudcleaner.aws.resources.ecr.EcrRepositoryName
 import cloudcleaner.aws.resources.route53.HostedZoneId
 import cloudcleaner.resources.Id
 import cloudcleaner.resources.StringId
@@ -28,12 +29,12 @@ fun idFromCloudFormationStackResourceOrNull(
     "AWS::IAM::Policy" -> Arn("arn:aws:iam::$accountId:policy/$physicalId")
     "AWS::IAM::ManagedPolicy" -> Arn(physicalId)
     "AWS::SSM::Parameter" -> Arn("arn:aws:ssm:$region:$accountId:parameter$physicalId")
-    "AWS::ECR::Repository" -> StringId("$accountId.dkr.ecr.$region.amazonaws.com/$physicalId")
     "AWS::S3::Bucket" -> Arn("arn:aws:s3:::$physicalId")
     "AWS::S3::BucketPolicy" -> null
-    "AWS::Logs::LogGroup" -> LogGroupName(physicalId)
+    "AWS::Logs::LogGroup" -> LogGroupName(physicalId, region)
     "AWS::Route53::HostedZone" -> HostedZoneId(physicalId)
-    "AWS::CloudFormation::Stack" -> StackName(extractStackNameFromStackId(physicalId))
+    "AWS::CloudFormation::Stack" -> StackName(extractStackNameFromStackId(physicalId), region)
+    "AWS::ECR::Repository" -> EcrRepositoryName(physicalId, region)
     else -> StringId(physicalId)
   }
 }

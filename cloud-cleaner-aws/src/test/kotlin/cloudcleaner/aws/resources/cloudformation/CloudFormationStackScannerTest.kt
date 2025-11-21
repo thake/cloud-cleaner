@@ -50,7 +50,7 @@ class CloudFormationStackScannerTest {
     val actualFlow = underTest.scan()
     // then
     val actualStacks = actualFlow.toList()
-    actualStacks.shouldContainOnly(CloudFormationStack(StackName("stackName2"), emptySet(), emptySet()))
+    actualStacks.shouldContainOnly(CloudFormationStack(StackName("stackName2", REGION), emptySet(), emptySet()))
   }
 
   @Test
@@ -95,46 +95,46 @@ class CloudFormationStackScannerTest {
     val actualStacks = actualFlow.toList()
     actualStacks.shouldContainExactlyInAnyOrder(
         CloudFormationStack(
-            stackName = StackName("exporting"),
+            stackName = StackName("exporting", REGION),
             dependsOn = emptySet(),
             containedResources = emptySet(),
         ),
         CloudFormationStack(
-            stackName = StackName("exportingAndImporting"),
+            stackName = StackName("exportingAndImporting", REGION),
             dependsOn = setOf(
-                StackName("exporting"),
+                StackName("exporting", REGION),
             ),
             containedResources = emptySet(),
         ),
         CloudFormationStack(
-            stackName = StackName("importing1"),
+            stackName = StackName("importing1", REGION),
             dependsOn = setOf(
-                StackName("exporting"), StackName("exportingAndImporting"),
+                StackName("exporting", REGION), StackName("exportingAndImporting", REGION),
             ),
             containedResources = emptySet(),
         ),
         CloudFormationStack(
-            stackName = StackName("importing2"),
+            stackName = StackName("importing2", REGION),
             dependsOn = setOf(
-                StackName("exportingAndImporting"),
+                StackName("exportingAndImporting", REGION),
             ),
             containedResources = setOf(
                 Arn(roleArn),
             ),
         ),
         CloudFormationStack(
-            stackName = StackName("usingRole"),
+            stackName = StackName("usingRole", REGION),
             dependsOn = setOf(
                 Arn(roleArn),
             ),
             containedResources = setOf(
-                StackName("nestedStack"),
+                StackName("nestedStack", REGION),
             ),
         ),
         CloudFormationStack(
-            stackName = StackName("nestedStack"),
+            stackName = StackName("nestedStack", REGION),
             dependsOn = setOf(
-                StackName("usingRole"),
+                StackName("usingRole", REGION),
             ),
             containedResources = emptySet(),
         ),

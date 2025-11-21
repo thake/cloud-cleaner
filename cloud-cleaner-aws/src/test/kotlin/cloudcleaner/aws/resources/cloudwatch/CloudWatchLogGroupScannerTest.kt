@@ -12,7 +12,7 @@ import kotlin.test.Test
 
 class CloudWatchLogGroupScannerTest {
   private val cloudWatchLogsClient = CloudWatchLogsClientStub()
-  private val underTest = CloudWatchLogGroupScanner(cloudWatchLogsClient)
+  private val underTest = CloudWatchLogGroupScanner(cloudWatchLogsClient, REGION)
 
   @Test
   fun `scan should return empty list when no log groups are present`() = runTest {
@@ -59,7 +59,7 @@ class CloudWatchLogGroupScannerTest {
     val actualLogGroups = actualFlow.toList()
     actualLogGroups.shouldHaveSize(1)
     val actualLogGroup = actualLogGroups.first()
-    actualLogGroup.logGroupName shouldBe LogGroupName("/aws/lambda/my-function")
+    actualLogGroup.logGroupName shouldBe LogGroupName("/aws/lambda/my-function", REGION)
     actualLogGroup.logGroupArn.value shouldBe "arn:aws:logs:$REGION:$ACCOUNT_ID:log-group:/aws/lambda/my-function"
     actualLogGroup.dependsOn.shouldBeEmpty()
   }

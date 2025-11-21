@@ -4,6 +4,7 @@ package cloudcleaner.aws.resources.cloudformation
 import aws.sdk.kotlin.services.cloudformation.model.CloudFormationException
 import aws.sdk.kotlin.services.cloudformation.model.ResourceStatus
 import aws.sdk.kotlin.services.cloudformation.model.StackStatus
+import cloudcleaner.aws.resources.REGION
 import cloudcleaner.aws.resources.cloudformation.CloudFormationClientStub.StackStub
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.nulls.shouldBeNull
@@ -20,11 +21,11 @@ class CloudFormationStackDeleterTest {
   fun `delete should successfully delete a stack`() = runTest {
     // given
     val stack = CloudFormationStack(
-        stackName = StackName("test-stack"),
+        stackName = StackName("test-stack", REGION),
         containedResources = emptySet(),
         dependsOn = emptySet(),
     )
-    cloudFormationClient.stacks.add(StackStub(stack.stackName.value))
+    cloudFormationClient.stacks.add(StackStub(stack.name))
 
     // when
     underTest.delete(stack)
@@ -37,7 +38,7 @@ class CloudFormationStackDeleterTest {
   fun `delete should be able to delete stacks by retaining resources`() = runTest {
     // given
     val stack = CloudFormationStack(
-        stackName = StackName("stack"),
+        stackName = StackName("stack", REGION),
         containedResources = emptySet(),
         dependsOn = emptySet(),
     )
@@ -63,11 +64,11 @@ class CloudFormationStackDeleterTest {
   fun `delete should throw error if delete fails`() = runTest {
     // given
     val stack = CloudFormationStack(
-        stackName = StackName("failing-stack"),
+        stackName = StackName("failing-stack", REGION),
         containedResources = emptySet(),
         dependsOn = emptySet(),
     )
-    cloudFormationClient.stacks.add(StackStub(stack.stackName.value))
+    cloudFormationClient.stacks.add(StackStub(stack.name))
     cloudFormationClient.deleteFailsWithError = true
 
     // when & then
@@ -80,11 +81,11 @@ class CloudFormationStackDeleterTest {
   fun `delete should disable termination protection if enabled`() = runTest {
     // given
     val stack = CloudFormationStack(
-        stackName = StackName("protected-stack"),
+        stackName = StackName("protected-stack", REGION),
         containedResources = emptySet(),
         dependsOn = emptySet(),
     )
-    cloudFormationClient.stacks.add(StackStub(stack.stackName.value, enableTerminationProtection = true))
+    cloudFormationClient.stacks.add(StackStub(stack.name, enableTerminationProtection = true))
 
     // when
     underTest.delete(stack)

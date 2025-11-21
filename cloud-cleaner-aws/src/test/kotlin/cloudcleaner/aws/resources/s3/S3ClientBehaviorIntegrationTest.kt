@@ -12,6 +12,7 @@ import aws.sdk.kotlin.services.s3.model.PutObjectRequest
 import aws.smithy.kotlin.runtime.ServiceException
 import aws.smithy.kotlin.runtime.content.ByteStream
 import cloudcleaner.aws.resources.LocalStack
+import cloudcleaner.aws.resources.REGION
 import cloudcleaner.aws.resources.shouldBeEquivalentTo
 import io.kotest.assertions.throwables.shouldThrow
 import kotlinx.coroutines.test.runTest
@@ -23,7 +24,7 @@ import kotlin.uuid.Uuid
 class S3ClientBehaviorIntegrationTest {
   private val realClient = S3Client {
     endpointUrl = LocalStack.localstackUrl
-    region = "eu-central-1"
+    region = REGION
   }
 
   @Test fun `headBucket response for non existing bucket should be the same`() = runTest {

@@ -28,6 +28,7 @@ import aws.sdk.kotlin.services.s3.model.ObjectVersion
 import aws.sdk.kotlin.services.s3.model.S3Exception
 import aws.smithy.kotlin.runtime.InternalApi
 import aws.smithy.kotlin.runtime.ServiceErrorMetadata
+import cloudcleaner.aws.resources.REGION
 import io.mockk.mockk
 
 class S3ClientStub(
@@ -41,7 +42,7 @@ class S3ClientStub(
       val objects: MutableList<ObjectStub> = mutableListOf(),
       val versions: MutableList<ObjectVersionStub> = mutableListOf(),
       val deleteMarkers: MutableList<DeleteMarkerStub> = mutableListOf(),
-      val region: String = "eu-central-1"
+      val region: String = REGION
   )
 
   data class ObjectStub(val key: String)

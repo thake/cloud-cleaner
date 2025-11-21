@@ -3,6 +3,7 @@ package cloudcleaner.aws.resources.iam
 import aws.sdk.kotlin.services.iam.IamClient
 import aws.sdk.kotlin.services.iam.createRole
 import cloudcleaner.aws.resources.LocalStack
+import cloudcleaner.aws.resources.REGION
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.test.runTest
@@ -14,7 +15,7 @@ import kotlin.uuid.Uuid
 class IamClientBehaviorIntegrationTest {
   val iamClient = IamClient {
     endpointUrl = LocalStack.localstackUrl
-    region = "eu-central-1"
+    region = REGION
   }
 
   @Test fun `isRoleExisting should correctly detect not existing role`() = shouldCorrectlyDetectNotExistingRole(iamClient)

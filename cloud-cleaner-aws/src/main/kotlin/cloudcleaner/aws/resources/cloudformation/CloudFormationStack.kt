@@ -19,7 +19,6 @@ import cloudcleaner.resources.Resource
 import cloudcleaner.resources.ResourceDefinition
 import cloudcleaner.resources.ResourceDeleter
 import cloudcleaner.resources.ResourceScanner
-import cloudcleaner.resources.StringId
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -27,7 +26,9 @@ import kotlin.time.Duration.Companion.milliseconds
 
 val logger = KotlinLogging.logger {}
 
-typealias StackName = StringId
+data class StackName(val name: String, val region: String) : Id {
+  override fun toString() = name
+}
 
 private const val TYPE = "CloudFormationStack"
 private const val MAX_ATTEMPTS = 3
@@ -67,10 +68,10 @@ class CloudFormationStackScanner(
       response.stacks
           ?.filter { it.stackStatus != StackStatus.DeleteComplete }
           ?.forEach { stack ->
-            val stackName = stack.stackName?.let { StackName(it) } ?: return@forEach
+            val stackName = stack.stackName?.let { StackName(it, region) } ?: return@forEach
             val contains =
                 cloudFormationClient
-                    .listStackResources { this.stackName = stackName.value }
+                    .listStackResources { this.stackName = stackName.name }
                     .stackResourceSummaries
                     ?.mapNotNull {
                       idFromCloudFormationStackResourceOrNull(
@@ -80,8 +81,8 @@ class CloudFormationStackScanner(
                     ?.toSet() ?: emptySet()
             val roleDependency = setOfNotNull(stack.roleArn?.let { Arn(it) })
             val exportDependencies: Set<Id> =
-                outputDependencyMap.getOrElse(stackName.value) { emptySet() }.map { StackName(it) }.toSet()
-            val parentDependency = setOfNotNull(stack.parentId?.let { StackName(extractStackNameFromStackId(it)) })
+                outputDependencyMap.getOrElse(stackName.name) { emptySet() }.map { StackName(it, region) }.toSet()
+            val parentDependency = setOfNotNull(stack.parentId?.let { StackName(extractStackNameFromStackId(it), region) })
             val dependencies = roleDependency + exportDependencies + parentDependency
             emit(CloudFormationStack(stackName = stackName, containedResources = contains, dependsOn = dependencies))
           }
@@ -115,32 +116,32 @@ class CloudFormationStackDeleter(private val cloudFormationClient: CloudFormatio
   }
 
   private suspend fun doDelete(stack: CloudFormationStack) {
-    val currentState = cloudFormationClient.getStackDescription(stack.stackName.value)
+    val currentState = cloudFormationClient.getStackDescription(stack.name)
     when (currentState.stackStatus) {
       StackStatus.DeleteInProgress ->
-        cloudFormationClient.waitUntilStackDeleteComplete { stackName = stack.stackName.value }.getOrThrow()
+        cloudFormationClient.waitUntilStackDeleteComplete { stackName = stack.name }.getOrThrow()
 
       StackStatus.DeleteFailed -> {
         logger.warn {
           "Deletion of Cloudformation Stack $stack failed. Attempting to delete stack while retaining failed resources."
         }
-        cloudFormationClient.deleteStackAndRetainAllUndeletedResources(stack.stackName.value).getOrThrow()
+        cloudFormationClient.deleteStackAndRetainAllUndeletedResources(stack.name).getOrThrow()
       }
 
       StackStatus.DeleteComplete -> Unit
       else -> {
-        cloudFormationClient.waitForRunningOperationsToFinish(stack.stackName.value, currentState.stackStatus)
+        cloudFormationClient.waitForRunningOperationsToFinish(stack.name, currentState.stackStatus)
         if (currentState.enableTerminationProtection) {
           logger.info { "Disabling termination protection for CloudFormation stack $stack" }
           cloudFormationClient.updateTerminationProtection {
-            stackName = stack.stackName.value
+            stackName = stack.name
             enableTerminationProtection = false
           }
         }
-        cloudFormationClient.deleteStack { stackName = stack.stackName.value }
+        cloudFormationClient.deleteStack { stackName = stack.name }
         cloudFormationClient.waitUntilStackDeleteCompleteFixed(
             DescribeStacksRequest {
-              stackName = stack.stackName.value
+              stackName = stack.name
             },
         ).getOrThrow()
       }
@@ -156,9 +157,9 @@ data class CloudFormationStack(
   override val id: Id
     get() = stackName
 
-  override val name: String = stackName.value
+  override val name: String = stackName.name
   override val type: String = TYPE
   override val properties: Map<String, String> = emptyMap()
 
-  override fun toString() = stackName.value
+  override fun toString() = name
 }
