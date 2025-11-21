@@ -6,8 +6,10 @@ import cloudcleaner.aws.resources.cloudformation.extractStackNameFromStackId
 import cloudcleaner.aws.resources.cloudwatch.CloudWatchLogGroupName
 import cloudcleaner.aws.resources.dynamodb.DynamoDbTableName
 import cloudcleaner.aws.resources.ecr.EcrRepositoryName
+import cloudcleaner.aws.resources.iam.IamRoleName
 import cloudcleaner.aws.resources.lambda.LambdaFunctionName
 import cloudcleaner.aws.resources.route53.HostedZoneId
+import cloudcleaner.aws.resources.ssm.SsmParameterName
 import cloudcleaner.resources.Id
 import cloudcleaner.resources.StringId
 
@@ -27,10 +29,10 @@ fun idFromCloudFormationStackResourceOrNull(
   val physicalId = stackResourceSummary.physicalResourceId ?: return null
   val cloudformationType = stackResourceSummary.resourceType ?: return null
   return when (cloudformationType) {
-    "AWS::IAM::Role" -> Arn("arn:aws:iam::$accountId:role/$physicalId")
+    "AWS::IAM::Role" -> IamRoleName(physicalId)
     "AWS::IAM::Policy" -> Arn("arn:aws:iam::$accountId:policy/$physicalId")
     "AWS::IAM::ManagedPolicy" -> Arn(physicalId)
-    "AWS::SSM::Parameter" -> Arn("arn:aws:ssm:$region:$accountId:parameter$physicalId")
+    "AWS::SSM::Parameter" -> SsmParameterName(physicalId, region)
     "AWS::S3::Bucket" -> Arn("arn:aws:s3:::$physicalId")
     "AWS::S3::BucketPolicy" -> null
     "Custom::LogRetention",

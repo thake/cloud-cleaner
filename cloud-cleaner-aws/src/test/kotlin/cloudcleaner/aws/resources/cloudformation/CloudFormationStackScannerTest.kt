@@ -2,10 +2,10 @@ package cloudcleaner.aws.resources.cloudformation
 
 import aws.sdk.kotlin.services.cloudformation.model.StackStatus
 import cloudcleaner.aws.resources.ACCOUNT_ID
-import cloudcleaner.aws.resources.Arn
 import cloudcleaner.aws.resources.REGION
 import cloudcleaner.aws.resources.cloudformation.CloudFormationClientStub.StackResource
 import cloudcleaner.aws.resources.cloudformation.CloudFormationClientStub.StackStub
+import cloudcleaner.aws.resources.iam.IamRoleName
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.collections.shouldContainOnly
@@ -56,7 +56,8 @@ class CloudFormationStackScannerTest {
   @Test
   fun `scan should return stacks with dependencies`() = runTest {
     val nestedStackArn = generateStackIdFromStackName("nestedStack")
-    val roleArn = "arn:aws:iam::$ACCOUNT_ID:role/roleName"
+    val roleName = "roleName"
+    val roleArn = "arn:aws:iam::$ACCOUNT_ID:role/${roleName}"
     val stacks = listOf(
         StackStub("exporting", exports = setOf("export1", "unused")),
         StackStub("exportingAndImporting", exports = setOf("export2"), imports = setOf("export1")),
@@ -119,13 +120,13 @@ class CloudFormationStackScannerTest {
                 StackName("exportingAndImporting", REGION),
             ),
             containedResources = setOf(
-                Arn(roleArn),
+                IamRoleName(roleName),
             ),
         ),
         CloudFormationStack(
             stackName = StackName("usingRole", REGION),
             dependsOn = setOf(
-                Arn(roleArn),
+                IamRoleName(roleName),
             ),
             containedResources = setOf(
                 StackName("nestedStack", REGION),

@@ -65,7 +65,7 @@ class CloudWatchLogGroupResourceDefinitionFactory : AwsResourceDefinitionFactory
 class CloudWatchLogGroupScanner(private val cloudWatchLogsClient: CloudWatchLogsClient, val region: String) :
     ResourceScanner<CloudWatchLogGroup> {
   override fun scan(): Flow<CloudWatchLogGroup> = flow {
-    cloudWatchLogsClient.describeLogGroupsPaginated {}.collect { response ->
+    cloudWatchLogsClient.describeLogGroupsPaginated ().collect { response ->
       response.logGroups?.forEach { logGroup ->
         val logGroupName = logGroup.logGroupName ?: return@forEach
         val logGroupArn = logGroup.arn?: return@forEach

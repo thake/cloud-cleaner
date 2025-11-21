@@ -15,6 +15,7 @@ import cloudcleaner.aws.resources.AwsConnectionInformation
 import cloudcleaner.aws.resources.AwsResourceDefinitionFactory
 import cloudcleaner.aws.resources.cloudwatch.CloudWatchLogGroupName
 import cloudcleaner.aws.resources.iam.IamRoleName
+import cloudcleaner.aws.resources.iam.toIamRoleName
 import cloudcleaner.aws.resources.idFromCloudFormationStackResourceOrNull
 import cloudcleaner.aws.resources.lambda.LambdaFunctionName
 import cloudcleaner.resources.Id
@@ -89,7 +90,7 @@ class CloudFormationStackScanner(
                     CloudWatchLogGroupName("/aws/lambda/${it.value}", it.region),
                     IamRoleName(it.value)
                 ) }
-            val roleDependency = setOfNotNull(stack.roleArn?.let { Arn(it) })
+            val roleDependency = setOfNotNull(stack.roleArn?.let { Arn(it).toIamRoleName() })
             val exportDependencies: Set<Id> =
                 outputDependencyMap.getOrElse(stackName.name) { emptySet() }.map { StackName(it, region) }.toSet()
             val parentDependency = setOfNotNull(stack.parentId?.let { StackName(extractStackNameFromStackId(it), region) })

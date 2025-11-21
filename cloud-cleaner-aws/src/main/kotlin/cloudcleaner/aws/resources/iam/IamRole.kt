@@ -29,6 +29,7 @@ private const val TYPE = "IamRole"
 data class IamRoleName(val name: String): Id {
   override fun toString() = "$name (global)"
 }
+fun Arn.toIamRoleName(): IamRoleName = IamRoleName(this.value.split("/").last())
 data class IamRole(val roleName: IamRoleName, private val dependencies: Set<Id> = emptySet()) : Resource {
   override val id: IamRoleName = roleName
   override val name: String = roleName.name
