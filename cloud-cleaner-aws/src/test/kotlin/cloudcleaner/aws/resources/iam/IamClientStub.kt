@@ -45,7 +45,6 @@ class IamClientStub(
 
   data class RoleStub(
     val roleName: String,
-    val roleArn: String,
     val attachedPolicies: MutableList<AttachedPolicyStub> = mutableListOf(),
     val inlinePolicies: MutableList<String> = mutableListOf(),
     val boundaryPolicyArn: String? = null
@@ -150,7 +149,6 @@ class IamClientStub(
     }
     val newRole = RoleStub(
       roleName = input.roleName!!,
-      roleArn = "arn:aws:iam::123456789012:role/${input.roleName}",
       boundaryPolicyArn = input.permissionsBoundary
     )
     roles.add(newRole)
@@ -161,7 +159,7 @@ class IamClientStub(
 
   private fun RoleStub.toRole(): Role = Role {
     roleName = this@toRole.roleName
-    arn = roleArn
+    arn = "arn:aws:iam::0000000:role/$roleName"
     permissionsBoundary = boundaryPolicyArn?.let { pb ->
       AttachedPermissionsBoundary {
         permissionsBoundaryArn = pb
@@ -169,7 +167,7 @@ class IamClientStub(
     }
     path = "/"
     createDate = Instant.now()
-    roleId = roleArn
+    roleId = arn
   }
 
   // Policy operations

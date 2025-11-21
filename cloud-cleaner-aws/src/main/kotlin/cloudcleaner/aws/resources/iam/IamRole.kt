@@ -26,10 +26,12 @@ import kotlin.time.Duration.Companion.milliseconds
 val logger = KotlinLogging.logger {}
 
 private const val TYPE = "IamRole"
-
-data class IamRole(val roleName: String, val roleArn: Arn, private val dependencies: Set<Id> = emptySet()) : Resource {
-  override val id: Arn = roleArn
-  override val name: String = roleName
+data class IamRoleName(val name: String): Id {
+  override fun toString() = "$name (global)"
+}
+data class IamRole(val roleName: IamRoleName, private val dependencies: Set<Id> = emptySet()) : Resource {
+  override val id: IamRoleName = roleName
+  override val name: String = roleName.name
   override val type: String = TYPE
   override val properties: Map<String, String> = emptyMap()
   override val dependsOn: Set<Id> = dependencies
@@ -54,13 +56,13 @@ class IamRoleResourceDefinitionFactory : AwsResourceDefinitionFactory<IamRole> {
     return ResourceDefinition(
         type = TYPE,
         resourceDeleter = IamRoleDeleter(client),
-        resourceScanner = IamRoleScanner(client),
+        resourceScanner = IamRoleScanner(client, awsConnectionInformation.region),
         close = { client.close() },
     )
   }
 }
 
-class IamRoleScanner(private val iamClient: IamClient) : ResourceScanner<IamRole> {
+class IamRoleScanner(private val iamClient: IamClient, val region: String) : ResourceScanner<IamRole> {
   override fun scan(): Flow<IamRole> = flow {
     iamClient.listRolesPaginated().collect { response ->
       response.roles.forEach { role ->
@@ -69,7 +71,6 @@ class IamRoleScanner(private val iamClient: IamClient) : ResourceScanner<IamRole
           return@forEach
         }
         val roleName = role.roleName
-        val roleArn = Arn(role.arn)
 
         // Get attached managed policies as dependencies
         val dependencies =
@@ -96,8 +97,7 @@ class IamRoleScanner(private val iamClient: IamClient) : ResourceScanner<IamRole
 
         emit(
             IamRole(
-                roleName = roleName,
-                roleArn = roleArn,
+                roleName = IamRoleName(roleName),
                 dependencies = dependencies,
             ),
         )
@@ -109,7 +109,7 @@ class IamRoleScanner(private val iamClient: IamClient) : ResourceScanner<IamRole
 class IamRoleDeleter(private val iamClient: IamClient) : ResourceDeleter {
   override suspend fun delete(resource: Resource) {
     val role = resource as? IamRole ?: throw IllegalArgumentException("Resource not an IamRole")
-    val roleName = role.roleName
+    val roleName = role.name
     if (!iamClient.isRoleExisting(roleName)) {
       return
     }

@@ -14,6 +14,7 @@ import cloudcleaner.aws.resources.Arn
 import cloudcleaner.aws.resources.AwsConnectionInformation
 import cloudcleaner.aws.resources.AwsResourceDefinitionFactory
 import cloudcleaner.aws.resources.cloudwatch.LogGroupName
+import cloudcleaner.aws.resources.iam.IamRoleName
 import cloudcleaner.aws.resources.idFromCloudFormationStackResourceOrNull
 import cloudcleaner.aws.resources.lambda.LambdaFunctionName
 import cloudcleaner.resources.Id
@@ -39,7 +40,7 @@ class CloudformationStackResourceDefinitionFactory : AwsResourceDefinitionFactor
   override val type: String = TYPE
 
   override fun createResourceDefinition(
-    awsConnectionInformation: AwsConnectionInformation,
+      awsConnectionInformation: AwsConnectionInformation,
   ): ResourceDefinition<CloudFormationStack> {
     val client = CloudFormationClient {
       credentialsProvider = awsConnectionInformation.credentialsProvider
@@ -52,17 +53,16 @@ class CloudformationStackResourceDefinitionFactory : AwsResourceDefinitionFactor
     return ResourceDefinition(
         type = TYPE,
         resourceDeleter = CloudFormationStackDeleter(client),
-        resourceScanner =
-            CloudFormationStackScanner(client, awsConnectionInformation.accountId, awsConnectionInformation.region),
+        resourceScanner = CloudFormationStackScanner(client, awsConnectionInformation.accountId, awsConnectionInformation.region),
         close = { client.close() },
     )
   }
 }
 
 class CloudFormationStackScanner(
-  private val cloudFormationClient: CloudFormationClient,
-  private val accountId: String,
-  private val region: String
+    private val cloudFormationClient: CloudFormationClient,
+    private val accountId: String,
+    private val region: String
 ) : ResourceScanner<CloudFormationStack> {
   override fun scan(): Flow<CloudFormationStack> = flow {
     val outputDependencyMap = cloudFormationClient.exportDependencyMap()
@@ -73,15 +73,22 @@ class CloudFormationStackScanner(
             val stackName = stack.stackName?.let { StackName(it, region) } ?: return@forEach
             val contains =
                 (cloudFormationClient
-                    .listStackResources { this.stackName = stackName.name }
-                    .stackResourceSummaries
-                    ?.mapNotNull {
-                      idFromCloudFormationStackResourceOrNull(
-                          stackResourceSummary = it, accountId = accountId, region = region,
-                      )
-                    }
-                    ?.toSet() ?: emptySet()).toMutableSet()
-            contains += contains.filterIsInstance<LambdaFunctionName>().map { LogGroupName("/aws/lambda/${it.value}", it.region) }
+                        .listStackResources { this.stackName = stackName.name }
+                        .stackResourceSummaries
+                        ?.mapNotNull {
+                          idFromCloudFormationStackResourceOrNull(
+                              stackResourceSummary = it,
+                              accountId = accountId,
+                              region = region,
+                          )
+                        }
+                        ?.toSet() ?: emptySet())
+                    .toMutableSet()
+            contains +=
+                contains.filterIsInstance<LambdaFunctionName>().flatMap { listOf(
+                    LogGroupName("/aws/lambda/${it.value}", it.region),
+                    IamRoleName(it.value)
+                ) }
             val roleDependency = setOfNotNull(stack.roleArn?.let { Arn(it) })
             val exportDependencies: Set<Id> =
                 outputDependencyMap.getOrElse(stackName.name) { emptySet() }.map { StackName(it, region) }.toSet()
@@ -121,13 +128,10 @@ class CloudFormationStackDeleter(private val cloudFormationClient: CloudFormatio
   private suspend fun doDelete(stack: CloudFormationStack) {
     val currentState = cloudFormationClient.getStackDescription(stack.name)
     when (currentState.stackStatus) {
-      StackStatus.DeleteInProgress ->
-        cloudFormationClient.waitUntilStackDeleteComplete { stackName = stack.name }.getOrThrow()
+      StackStatus.DeleteInProgress -> cloudFormationClient.waitUntilStackDeleteComplete { stackName = stack.name }.getOrThrow()
 
       StackStatus.DeleteFailed -> {
-        logger.warn {
-          "Deletion of Cloudformation Stack $stack failed. Attempting to delete stack while retaining failed resources."
-        }
+        logger.warn { "Deletion of Cloudformation Stack $stack failed. Attempting to delete stack while retaining failed resources." }
         cloudFormationClient.deleteStackAndRetainAllUndeletedResources(stack.name).getOrThrow()
       }
 
@@ -142,21 +146,18 @@ class CloudFormationStackDeleter(private val cloudFormationClient: CloudFormatio
           }
         }
         cloudFormationClient.deleteStack { stackName = stack.name }
-        cloudFormationClient.waitUntilStackDeleteCompleteFixed(
-            DescribeStacksRequest {
-              stackName = stack.name
-            },
-        ).getOrThrow()
+        cloudFormationClient
+            .waitUntilStackDeleteCompleteFixed(
+                DescribeStacksRequest { stackName = stack.name },
+            )
+            .getOrThrow()
       }
     }
   }
 }
 
-data class CloudFormationStack(
-  val stackName: StackName,
-  override val containedResources: Set<Id>,
-  override val dependsOn: Set<Id>
-) : Resource {
+data class CloudFormationStack(val stackName: StackName, override val containedResources: Set<Id>, override val dependsOn: Set<Id>) :
+    Resource {
   override val id: Id
     get() = stackName
 

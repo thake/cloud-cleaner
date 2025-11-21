@@ -1,7 +1,7 @@
 package cloudcleaner.aws.resources.iam
 
-import cloudcleaner.aws.resources.ACCOUNT_ID
 import cloudcleaner.aws.resources.Arn
+import cloudcleaner.aws.resources.REGION
 import cloudcleaner.aws.resources.iam.IamClientStub.AttachedPolicyStub
 import cloudcleaner.aws.resources.iam.IamClientStub.RoleStub
 import io.kotest.matchers.collections.shouldBeEmpty
@@ -14,7 +14,7 @@ import kotlin.test.Test
 
 class IamRoleScannerTest {
     private val iamClient = IamClientStub()
-    private val underTest = IamRoleScanner(iamClient)
+    private val underTest = IamRoleScanner(iamClient, REGION)
 
     @Test
     fun `scan should return empty list when no roles are present`() = runTest {
@@ -28,8 +28,7 @@ class IamRoleScannerTest {
         repeat(100) {
             iamClient.roles.add(
                 RoleStub(
-                    roleName = "role-$it",
-                    roleArn = "arn:aws:iam::$ACCOUNT_ID:role/role-$it"
+                    roleName = "role-$it"
                 )
             )
         }
@@ -44,8 +43,7 @@ class IamRoleScannerTest {
     fun `scan should return roles without attached policies`() = runTest {
         // given
         val role = RoleStub(
-            roleName = "test-role",
-            roleArn = "arn:aws:iam::$ACCOUNT_ID:role/test-role"
+            roleName = "test-role"
         )
         iamClient.roles.add(role)
 
@@ -56,8 +54,7 @@ class IamRoleScannerTest {
         val actualRoles = actualFlow.toList()
         actualRoles.shouldHaveSize(1)
         val actualRole = actualRoles.first()
-        actualRole.roleName shouldBe "test-role"
-        actualRole.roleArn.value shouldBe "arn:aws:iam::$ACCOUNT_ID:role/test-role"
+        actualRole.name shouldBe "test-role"
         actualRole.dependsOn.shouldBeEmpty()
     }
 
@@ -76,7 +73,6 @@ class IamRoleScannerTest {
         )
         val role = RoleStub(
             roleName = "test-role",
-            roleArn = "arn:aws:iam::$ACCOUNT_ID:role/test-role",
             attachedPolicies = attachedPolicies.toMutableList()
         )
         iamClient.roles.add(role)
@@ -99,7 +95,6 @@ class IamRoleScannerTest {
         // given
         val role = RoleStub(
             roleName = "test-role",
-            roleArn = "arn:aws:iam::$ACCOUNT_ID:role/test-role",
             inlinePolicies = listOf("inline-policy-1", "inline-policy-2").toMutableList()
         )
         iamClient.roles.add(role)
@@ -125,7 +120,6 @@ class IamRoleScannerTest {
         )
         val role = RoleStub(
             roleName = "test-role",
-            roleArn = "arn:aws:iam::$ACCOUNT_ID:role/test-role",
             attachedPolicies = attachedPolicies.toMutableList(),
             inlinePolicies = listOf("inline-policy").toMutableList()
         )
@@ -148,7 +142,6 @@ class IamRoleScannerTest {
       // given
       val role = RoleStub(
           roleName = "test-role",
-          roleArn = "arn:aws:iam::$ACCOUNT_ID:role/test-role",
           boundaryPolicyArn = "arn:aws:iam::aws:policy/PowerUserAccess"
       )
       iamClient.roles.add(role)
