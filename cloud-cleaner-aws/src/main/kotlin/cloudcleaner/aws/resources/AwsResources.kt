@@ -6,6 +6,7 @@ import cloudcleaner.aws.resources.cloudwatch.cloudWatchLogsResources
 import cloudcleaner.aws.resources.dynamodb.dynamoDbResources
 import cloudcleaner.aws.resources.ecr.ecrResources
 import cloudcleaner.aws.resources.iam.iamResources
+import cloudcleaner.aws.resources.kms.kmsResources
 import cloudcleaner.aws.resources.route53.route53Resources
 import cloudcleaner.aws.resources.s3.s3Resources
 import cloudcleaner.aws.resources.ssm.ssmResources
@@ -23,6 +24,7 @@ fun ResourceRegistry.addAwsResources(
           dynamoDbResources() +
           ecrResources() +
           iamResources() +
+          kmsResources() +
           route53Resources() +
           s3Resources() +
           ssmResources()

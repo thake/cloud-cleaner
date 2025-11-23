@@ -12,6 +12,9 @@ import aws.sdk.kotlin.services.iam.IamClient
 import aws.sdk.kotlin.services.iam.createPolicy
 import aws.sdk.kotlin.services.iam.createRole
 import aws.sdk.kotlin.services.iam.createUser
+import aws.sdk.kotlin.services.kms.KmsClient
+import aws.sdk.kotlin.services.kms.createAlias
+import aws.sdk.kotlin.services.kms.createKey
 import aws.sdk.kotlin.services.route53.Route53Client
 import aws.sdk.kotlin.services.route53.createHostedZone
 import aws.sdk.kotlin.services.s3.S3Client
@@ -197,6 +200,22 @@ suspend fun SsmClient.createParameter(): String {
   return name
 }
 
+suspend fun KmsClient.createKeyAlias(): String {
+  // First create a KMS key
+  val keyResponse = createKey {
+    description = "Test key ${randomString(8)}"
+  }
+  val keyId = keyResponse.keyMetadata?.keyId ?: throw IllegalStateException("Key creation failed")
+
+  // Then create an alias for the key
+  val aliasName = "alias/test-${randomString(8)}"
+  createAlias {
+    this.aliasName = aliasName
+    this.targetKeyId = keyId
+  }
+  return aliasName
+}
+
 suspend fun fillAccountWithResources(credentials: CredentialsProvider) {
   val cloudFormationClient = CloudFormationClient {
     region = "us-east-1"
@@ -234,6 +253,10 @@ suspend fun fillAccountWithResources(credentials: CredentialsProvider) {
     region = "us-east-1"
     credentialsProvider = credentials
   }
+  val kmsClient = KmsClient {
+    region = "us-east-1"
+    credentialsProvider = credentials
+  }
 
   // Create resources
   cloudFormationClient.createStack()
@@ -247,6 +270,7 @@ suspend fun fillAccountWithResources(credentials: CredentialsProvider) {
   s3Client.createBucket()
   secretsManagerClient.createSecret()
   ssmClient.createParameter()
+  kmsClient.createKeyAlias()
 
   // Close clients
   cloudFormationClient.close()
@@ -258,4 +282,5 @@ suspend fun fillAccountWithResources(credentials: CredentialsProvider) {
   s3Client.close()
   secretsManagerClient.close()
   ssmClient.close()
+  kmsClient.close()
 }

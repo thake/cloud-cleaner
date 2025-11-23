@@ -7,6 +7,8 @@ import cloudcleaner.aws.resources.cloudwatch.CloudWatchLogGroupName
 import cloudcleaner.aws.resources.dynamodb.DynamoDbTableName
 import cloudcleaner.aws.resources.ecr.EcrRepositoryName
 import cloudcleaner.aws.resources.iam.IamRoleName
+import cloudcleaner.aws.resources.kms.KmsKeyAliasName
+import cloudcleaner.aws.resources.kms.KmsKeyId
 import cloudcleaner.aws.resources.lambda.LambdaFunctionName
 import cloudcleaner.aws.resources.route53.HostedZoneId
 import cloudcleaner.aws.resources.ssm.SsmParameterName
@@ -43,6 +45,8 @@ fun idFromCloudFormationStackResourceOrNull(
     "AWS::Lambda::Function" -> LambdaFunctionName(physicalId, region)
     "AWS::DynamoDB::Table",
     "AWS::DynamoDB::GlobalTable" -> DynamoDbTableName(physicalId, region)
+    "AWS::KMS::Alias" -> KmsKeyAliasName(physicalId, region)
+    "AWS::KMS::Key" -> KmsKeyId(physicalId, region)
     else -> StringId(physicalId)
   }
 }

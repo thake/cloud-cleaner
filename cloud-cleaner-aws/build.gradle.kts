@@ -37,6 +37,7 @@ dependencies {
   implementation(awssdk.services.sqs)
   implementation(awssdk.services.sns)
   implementation(awssdk.services.dynamodb)
+  implementation(awssdk.services.kms)
   implementation(awssdk.services.sso)
   implementation(awssdk.runtime.smithy.kotlin.http.client.engine.okhttp)
 
