@@ -1,5 +1,7 @@
 package cloudcleaner.aws.resources
 
+import aws.sdk.kotlin.services.backup.BackupClient
+import aws.sdk.kotlin.services.backup.createBackupVault
 import aws.sdk.kotlin.services.cloudformation.CloudFormationClient
 import aws.sdk.kotlin.services.cloudformation.createStack
 import aws.sdk.kotlin.services.cloudwatchlogs.CloudWatchLogsClient
@@ -200,6 +202,12 @@ suspend fun SsmClient.createParameter(): String {
   return name
 }
 
+suspend fun BackupClient.createBackupVault(): String {
+  val vaultName = "vault-${randomString(8)}"
+  val response = createBackupVault { backupVaultName = vaultName }
+  return response.backupVaultName ?: throw IllegalStateException("Backup vault creation failed")
+}
+
 suspend fun KmsClient.createKeyAlias(): String {
   // First create a KMS key
   val keyResponse = createKey {
@@ -253,6 +261,10 @@ suspend fun fillAccountWithResources(credentials: CredentialsProvider) {
     region = "us-east-1"
     credentialsProvider = credentials
   }
+  val backupClient = BackupClient {
+    region = "us-east-1"
+    credentialsProvider = credentials
+  }
   val kmsClient = KmsClient {
     region = "us-east-1"
     credentialsProvider = credentials
@@ -270,6 +282,7 @@ suspend fun fillAccountWithResources(credentials: CredentialsProvider) {
   s3Client.createBucket()
   secretsManagerClient.createSecret()
   ssmClient.createParameter()
+  backupClient.createBackupVault()
   kmsClient.createKeyAlias()
 
   // Close clients
@@ -282,5 +295,6 @@ suspend fun fillAccountWithResources(credentials: CredentialsProvider) {
   s3Client.close()
   secretsManagerClient.close()
   ssmClient.close()
+  backupClient.close()
   kmsClient.close()
 }

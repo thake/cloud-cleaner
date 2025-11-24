@@ -1,6 +1,7 @@
 package cloudcleaner.aws.resources
 
 import aws.sdk.kotlin.services.cloudformation.model.StackResourceSummary
+import cloudcleaner.aws.resources.backup.BackupVaultName
 import cloudcleaner.aws.resources.cloudformation.StackName
 import cloudcleaner.aws.resources.cloudformation.extractStackNameFromStackId
 import cloudcleaner.aws.resources.cloudwatch.CloudWatchLogGroupName
@@ -47,6 +48,7 @@ fun idFromCloudFormationStackResourceOrNull(
     "AWS::DynamoDB::GlobalTable" -> DynamoDbTableName(physicalId, region)
     "AWS::KMS::Alias" -> KmsKeyAliasName(physicalId, region)
     "AWS::KMS::Key" -> KmsKeyId(physicalId, region)
+    "AWS::Backup::BackupVault" -> BackupVaultName(physicalId, region)
     else -> StringId(physicalId)
   }
 }

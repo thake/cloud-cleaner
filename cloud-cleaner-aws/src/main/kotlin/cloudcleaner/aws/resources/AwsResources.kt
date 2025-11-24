@@ -1,6 +1,7 @@
 package cloudcleaner.aws.resources
 
 import cloudcleaner.aws.config.Config
+import cloudcleaner.aws.resources.backup.backupResources
 import cloudcleaner.aws.resources.cloudformation.cloudFormationResources
 import cloudcleaner.aws.resources.cloudwatch.cloudWatchLogsResources
 import cloudcleaner.aws.resources.dynamodb.dynamoDbResources
@@ -19,7 +20,8 @@ fun ResourceRegistry.addAwsResources(
     resourceTypes: Config.ResourceTypes
 ): ResourceRegistry {
   val definitions =
-      cloudFormationResources() +
+      backupResources() +
+          cloudFormationResources() +
           cloudWatchLogsResources() +
           dynamoDbResources() +
           ecrResources() +

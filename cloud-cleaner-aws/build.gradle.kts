@@ -24,6 +24,7 @@ tasks.named<JavaExec>("run") {
 dependencies {
   implementation(project(":base"))
   implementation(libs.clikt)
+  implementation(awssdk.services.backup)
   implementation(awssdk.services.cloudformation)
   implementation(awssdk.services.sts)
   implementation(awssdk.services.iam)
