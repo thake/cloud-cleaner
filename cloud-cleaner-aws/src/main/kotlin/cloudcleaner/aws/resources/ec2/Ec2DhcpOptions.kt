@@ -15,7 +15,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlin.time.Duration.Companion.milliseconds
 
-val logger = KotlinLogging.logger {}
+private val logger = KotlinLogging.logger {}
 
 data class Ec2DhcpOptionsId(val value: String, val region: String) : Id {
   override fun toString() = "$value ($region)"

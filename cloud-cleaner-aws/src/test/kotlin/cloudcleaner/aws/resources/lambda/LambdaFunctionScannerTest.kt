@@ -4,6 +4,7 @@ import aws.sdk.kotlin.services.lambda.model.Runtime
 import cloudcleaner.aws.resources.ACCOUNT_ID
 import cloudcleaner.aws.resources.REGION
 import cloudcleaner.aws.resources.cloudwatch.CloudWatchLogGroupName
+import cloudcleaner.aws.resources.ec2.VpcId
 import cloudcleaner.aws.resources.iam.IamRoleName
 import cloudcleaner.aws.resources.lambda.LambdaClientStub.FunctionStub
 import io.kotest.matchers.collections.shouldBeEmpty
@@ -197,6 +198,97 @@ class LambdaFunctionScannerTest {
     function2.dependsOn.shouldContainExactlyInAnyOrder(
       IamRoleName("role2"),
       CloudWatchLogGroupName("/aws/lambda/function2", REGION)
+    )
+  }
+
+  @Test
+  fun `scan should extract VPC dependency when function is in VPC`() = runTest {
+    // given
+    lambdaClient.functions.add(
+      FunctionStub(
+        functionName = "vpc-function",
+        vpcId = "vpc-12345"
+      )
+    )
+    // when
+    val actualFlow = underTest.scan()
+    // then
+    val actualFunctions = actualFlow.toList()
+    actualFunctions.shouldHaveSize(1)
+    val dependencies = actualFunctions.first().dependsOn
+    dependencies.shouldContainExactlyInAnyOrder(
+      IamRoleName("lambda-execution-role"),
+      CloudWatchLogGroupName("/aws/lambda/vpc-function", REGION),
+        VpcId("vpc-12345", REGION)
+    )
+  }
+
+  @Test
+  fun `scan should not have VPC dependency when function is not in VPC`() = runTest {
+    // given
+    lambdaClient.functions.add(
+      FunctionStub(
+        functionName = "non-vpc-function",
+        vpcId = null
+      )
+    )
+    // when
+    val actualFlow = underTest.scan()
+    // then
+    val actualFunctions = actualFlow.toList()
+    actualFunctions.shouldHaveSize(1)
+    val dependencies = actualFunctions.first().dependsOn
+    dependencies.shouldContainExactlyInAnyOrder(
+      IamRoleName("lambda-execution-role"),
+      CloudWatchLogGroupName("/aws/lambda/non-vpc-function", REGION)
+    )
+  }
+
+  @Test
+  fun `scan should handle multiple functions with mixed VPC configurations`() = runTest {
+    // given
+    lambdaClient.functions.add(
+      FunctionStub(
+        functionName = "vpc-function",
+        vpcId = "vpc-11111"
+      )
+    )
+    lambdaClient.functions.add(
+      FunctionStub(
+        functionName = "non-vpc-function",
+        vpcId = null
+      )
+    )
+    lambdaClient.functions.add(
+      FunctionStub(
+        functionName = "another-vpc-function",
+        vpcId = "vpc-22222"
+      )
+    )
+    // when
+    val actualFlow = underTest.scan()
+    // then
+    val actualFunctions = actualFlow.toList()
+    actualFunctions.shouldHaveSize(3)
+
+    val vpcFunc1 = actualFunctions.first { it.name == "vpc-function" }
+    vpcFunc1.dependsOn.shouldContainExactlyInAnyOrder(
+      IamRoleName("lambda-execution-role"),
+      CloudWatchLogGroupName("/aws/lambda/vpc-function", REGION),
+      VpcId("vpc-11111", REGION)
+    )
+
+    val nonVpcFunc = actualFunctions.first { it.name == "non-vpc-function" }
+    nonVpcFunc.dependsOn.shouldContainExactlyInAnyOrder(
+      IamRoleName("lambda-execution-role"),
+      CloudWatchLogGroupName("/aws/lambda/non-vpc-function", REGION)
+    )
+
+    val vpcFunc2 = actualFunctions.first { it.name == "another-vpc-function" }
+    vpcFunc2.dependsOn.shouldContainExactlyInAnyOrder(
+      IamRoleName("lambda-execution-role"),
+      CloudWatchLogGroupName("/aws/lambda/another-vpc-function", REGION),
+      VpcId("vpc-22222", REGION)
     )
   }
 }

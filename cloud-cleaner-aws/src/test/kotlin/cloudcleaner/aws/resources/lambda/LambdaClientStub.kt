@@ -12,6 +12,7 @@ import aws.sdk.kotlin.services.lambda.model.ListFunctionsResponse
 import aws.sdk.kotlin.services.lambda.model.LoggingConfig
 import aws.sdk.kotlin.services.lambda.model.ResourceNotFoundException
 import aws.sdk.kotlin.services.lambda.model.Runtime
+import aws.sdk.kotlin.services.lambda.model.VpcConfigResponse
 import aws.smithy.kotlin.runtime.InternalApi
 import aws.smithy.kotlin.runtime.ServiceErrorMetadata
 import cloudcleaner.aws.resources.ACCOUNT_ID
@@ -37,7 +38,8 @@ class LambdaClientStub(
     val runtime: Runtime = Runtime.Python312,
     val role: String = "arn:aws:iam::$ACCOUNT_ID:role/lambda-execution-role",
     val handler: String = "index.handler",
-      val logGroup: String = "/aws/lambda/$functionName",
+    val logGroup: String = "/aws/lambda/$functionName",
+    val vpcId: String? = null,
   )
 
   override suspend fun listFunctions(input: ListFunctionsRequest): ListFunctionsResponse {
@@ -96,10 +98,15 @@ class LambdaClientStub(
     role = this@toFunctionConfiguration.role
     handler = this@toFunctionConfiguration.handler
     loggingConfig = this@toFunctionConfiguration.toLoggingConfig()
+    vpcConfig = this@toFunctionConfiguration.vpcId?.let { toVpcConfig(it) }
   }
 
   private fun FunctionStub.toLoggingConfig() = LoggingConfig {
     this.logGroup = this@toLoggingConfig.logGroup
+  }
+
+  private fun toVpcConfig(vpcId: String) = VpcConfigResponse {
+    this.vpcId = vpcId
   }
 }
 

@@ -6,6 +6,7 @@ import cloudcleaner.aws.resources.cloudformation.StackName
 import cloudcleaner.aws.resources.cloudformation.extractStackNameFromStackId
 import cloudcleaner.aws.resources.cloudwatch.CloudWatchLogGroupName
 import cloudcleaner.aws.resources.dynamodb.DynamoDbTableName
+import cloudcleaner.aws.resources.ec2.VpcId
 import cloudcleaner.aws.resources.ecr.EcrRepositoryName
 import cloudcleaner.aws.resources.iam.IamRoleName
 import cloudcleaner.aws.resources.kms.KmsKeyAliasName
@@ -49,6 +50,7 @@ fun idFromCloudFormationStackResourceOrNull(
     "AWS::KMS::Alias" -> KmsKeyAliasName(physicalId, region)
     "AWS::KMS::Key" -> KmsKeyId(physicalId, region)
     "AWS::Backup::BackupVault" -> BackupVaultName(physicalId, region)
+    "AWS::EC2::VPC" -> VpcId(physicalId, region)
     else -> StringId(physicalId)
   }
 }

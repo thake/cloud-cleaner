@@ -9,6 +9,7 @@ import cloudcleaner.aws.resources.Arn
 import cloudcleaner.aws.resources.AwsConnectionInformation
 import cloudcleaner.aws.resources.AwsResourceDefinitionFactory
 import cloudcleaner.aws.resources.cloudwatch.CloudWatchLogGroupName
+import cloudcleaner.aws.resources.ec2.VpcId
 import cloudcleaner.aws.resources.iam.toIamRoleName
 import cloudcleaner.resources.Id
 import cloudcleaner.resources.Resource
@@ -70,6 +71,11 @@ class LambdaFunctionScanner(private val lambdaClient: LambdaClient, val region: 
             }
             functionDetails.configuration?.loggingConfig?.logGroup?.let {
               dependencies.add(CloudWatchLogGroupName(it, region))
+            }
+
+            // Lambda functions in VPCs depend on the VPC
+            functionDetails.configuration?.vpcConfig?.vpcId?.let { vpcId ->
+              dependencies.add(VpcId(vpcId, region))
             }
 
           } catch (e: Exception) {
