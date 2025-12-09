@@ -5,6 +5,7 @@ import cloudcleaner.aws.resources.backup.backupResources
 import cloudcleaner.aws.resources.cloudformation.cloudFormationResources
 import cloudcleaner.aws.resources.cloudwatch.cloudWatchLogsResources
 import cloudcleaner.aws.resources.dynamodb.dynamoDbResources
+import cloudcleaner.aws.resources.ec2.ec2Resources
 import cloudcleaner.aws.resources.ecr.ecrResources
 import cloudcleaner.aws.resources.iam.iamResources
 import cloudcleaner.aws.resources.kms.kmsResources
@@ -25,6 +26,7 @@ fun ResourceRegistry.addAwsResources(
           cloudFormationResources() +
           cloudWatchLogsResources() +
           dynamoDbResources() +
+          ec2Resources() +
           ecrResources() +
           iamResources() +
           kmsResources() +
