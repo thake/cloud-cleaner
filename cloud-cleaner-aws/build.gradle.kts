@@ -6,6 +6,7 @@ plugins {
   alias(libs.plugins.graalvm.native)
   alias(libs.plugins.gmazzo.buildconfig)
   alias(libs.plugins.git.version)
+  alias(libs.plugins.stacktracedecoroutinator)
 }
 
 val gitVersion: groovy.lang.Closure<String> by extra

@@ -67,14 +67,67 @@ class ConfigReaderTest {
             Config.AccountConfig(
                 accountId = "000000000002",
                 assumeRole = "admin",
+                profile = null,
                 excludeFilters = listOf(fooFilterDefinition),
                 includeFilters = listOf(fooFilterDefinition),
             ),
             Config.AccountConfig(
-                accountId = "000000000001", assumeRole = "anotherAdmin", excludeFilters = filters, includeFilters = filters),
+                accountId = "000000000001", assumeRole = "anotherAdmin", profile = null, excludeFilters = filters, includeFilters = filters),
             Config.AccountConfig(
-                accountId = "000000000003", assumeRole = null, excludeFilters = emptyList(), includeFilters = emptyList())),
+                accountId = "000000000003", assumeRole = null, profile = null, excludeFilters = emptyList(), includeFilters = emptyList())),
     )
     config.resourceTypes.shouldBe(Config.ResourceTypes(includes = listOf("CloudFormationStack", "SSMParameter"), excludes = emptyList()))
+  }
+
+  @Test
+  fun `readConfig should support profile configuration for SSO`() {
+    // language=yaml
+    val validConfig =
+        """
+        regions:
+        - us-east-1
+        accounts:
+          123456789012:
+            profile: my-sso-profile
+          987654321098:
+            profile: another-profile
+            assumeRole: admin
+          111111111111:
+            assumeRole: admin
+        resourceTypes:
+          includes:
+            - CloudFormationStack
+        """
+            .trimIndent()
+    val configReader = ConfigReader()
+    val config = configReader.readConfig(validConfig)
+    // then
+    config.regions.shouldBe(listOf("us-east-1"))
+    config.accounts.shouldBe(
+        listOf(
+            Config.AccountConfig(
+                accountId = "123456789012",
+                assumeRole = null,
+                profile = "my-sso-profile",
+                excludeFilters = emptyList(),
+                includeFilters = emptyList(),
+            ),
+            Config.AccountConfig(
+                accountId = "987654321098",
+                assumeRole = "admin",
+                profile = "another-profile",
+                excludeFilters = emptyList(),
+                includeFilters = emptyList(),
+            ),
+            Config.AccountConfig(
+                accountId = "111111111111",
+                assumeRole = "admin",
+                profile = null,
+                excludeFilters = emptyList(),
+                includeFilters = emptyList(),
+            )
+        ),
+    )
+    config.resourceTypes.shouldBe(Config.ResourceTypes(includes = listOf("CloudFormationStack"), excludes = emptyList()))
   }
 }

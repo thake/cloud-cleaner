@@ -49,6 +49,7 @@ class IamRoleResourceDefinitionFactory : AwsResourceDefinitionFactory<IamRole> {
   ): ResourceDefinition<IamRole> {
     val client = IamClient {
       credentialsProvider = awsConnectionInformation.credentialsProvider
+      region = "global"
       retryStrategy {
         maxAttempts = 99
         delayProvider { initialDelay = 400.milliseconds }

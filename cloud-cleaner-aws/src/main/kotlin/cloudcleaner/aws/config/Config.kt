@@ -10,6 +10,7 @@ data class Config(
   data class AccountConfig(
       val accountId: String,
       val assumeRole: String?,
+      val profile: String?,
       val excludeFilters: List<Filter>,
       val includeFilters: List<Filter>,
   )

@@ -47,7 +47,6 @@ class Clean : SuspendingCliktCommand(name = "clean") {
             path
           }
           .required()
-  val profile by option("-p", "--profile", help = "AWS profile to use for authentication")
   val mfaOptions by MfaOptions().cooccurring()
   val dryRun by option("--no-dry-run", help = "Execute cleaning.").flag(default = false).convert { !it }
 
@@ -56,7 +55,7 @@ class Clean : SuspendingCliktCommand(name = "clean") {
     logger.info { "$dryRunInfo Starting AWS clean" }
     val config = ConfigReader().readConfig(configFile)
 
-    val bootstrapCredentialsProvider = mfaOptions?.let { mfaRootSession(it) } ?: DefaultChainCredentialsProvider(profileName = profile)
+    val bootstrapCredentialsProvider = mfaOptions?.let { mfaRootSession(it) }
 
     config.accounts.forEach { account ->
       withLoggingContext("accountId" to account.accountId) {
@@ -66,25 +65,12 @@ class Clean : SuspendingCliktCommand(name = "clean") {
     (bootstrapCredentialsProvider as? Closeable)?.close()
   }
 
-  private suspend fun cleanAwsAccount(config: Config, bootstrapCredentialsProvider: CredentialsProvider, account: Config.AccountConfig) {
+  private suspend fun cleanAwsAccount(config: Config, bootstrapCredentialsProvider: CredentialsProvider?, account: Config.AccountConfig) {
     withContext(MDCContext()) {
       val registry = ResourceRegistry()
       logger.info { "Purging account ${account.accountId}." }
       config.regions.forEach { region ->
-        val credentials =
-            if (account.assumeRole != null) {
-              StsAssumeRoleCredentialsProvider(
-                  bootstrapCredentialsProvider = bootstrapCredentialsProvider,
-                  assumeRoleParameters =
-                      AssumeRoleParameters(
-                          roleArn = "arn:aws:iam::${account.accountId}:role/${account.assumeRole}",
-                          duration = 1.hours,
-                      ),
-                  region = region.takeUnless { it == "global" },
-              )
-            } else {
-              bootstrapCredentialsProvider
-            }
+        val credentials = createCredentialsProvider(account, region, bootstrapCredentialsProvider)
 
         registry.addAwsResources(
             awsConnectionInformation =
@@ -108,7 +94,6 @@ class Clean : SuspendingCliktCommand(name = "clean") {
   suspend fun mfaRootSession(mfaOptions: MfaOptions): StaticCredentialsProvider {
     StsClient {
           region = "eu-central-1"
-          credentialsProvider = ProfileCredentialsProvider(profileName = profile)
         }
         .use { stsClient ->
           val rootSession =
@@ -125,6 +110,36 @@ class Clean : SuspendingCliktCommand(name = "clean") {
           }
         }
   }
+}
+
+private fun createCredentialsProvider(
+  account: Config.AccountConfig,
+  region: String,
+  bootstrapCredentialsProvider: CredentialsProvider?
+): CredentialsProvider {
+  val bootstrapCredentialsProvider = when {
+    account.profile != null -> ProfileCredentialsProvider(profileName = account.profile, region = region)
+    bootstrapCredentialsProvider != null -> bootstrapCredentialsProvider
+    else -> {
+      logger.info { "No mfa option or profile set. Falling back to default credentials provider to assume into roles." }
+      DefaultChainCredentialsProvider()
+    }
+  }
+  val credentialsProvider = when {
+    account.assumeRole != null -> {
+      StsAssumeRoleCredentialsProvider(
+          bootstrapCredentialsProvider = bootstrapCredentialsProvider,
+          assumeRoleParameters =
+              AssumeRoleParameters(
+                  roleArn = "arn:aws:iam::${account.accountId}:role/${account.assumeRole}",
+                  duration = 1.hours,
+              ),
+          region = region.takeUnless { it == "global" },
+      )
+    }
+    else -> bootstrapCredentialsProvider
+  }
+  return credentialsProvider
 }
 
 class MfaOptions : OptionGroup() {

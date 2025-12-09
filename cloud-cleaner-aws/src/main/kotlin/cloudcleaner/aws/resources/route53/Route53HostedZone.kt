@@ -52,6 +52,7 @@ class Route53HostedZoneResourceDefinitionFactory : AwsResourceDefinitionFactory<
   ): ResourceDefinition<Route53HostedZone> {
     val client = Route53Client {
       credentialsProvider = awsConnectionInformation.credentialsProvider
+      region = "global"
       retryStrategy {
         maxAttempts = 99
         delayProvider { initialDelay = 400.milliseconds }
