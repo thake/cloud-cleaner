@@ -4,7 +4,7 @@ coroutines = "1.10.2"
 java = "21"
 
 [libraries]
-clikt = "com.github.ajalt.clikt:clikt:5.0.3"
+clikt = "com.github.ajalt.clikt:clikt:5.1.0"
 kotlin-logging = "io.github.oshai:kotlin-logging-jvm:7.0.14"
 testcontainers-localstack = "org.testcontainers:testcontainers-localstack:2.0.3"
 kotest-assertions-core= "io.kotest:kotest-assertions-core:6.0.7"
