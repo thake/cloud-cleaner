@@ -8,7 +8,7 @@ dependencyResolutionManagement {
 
     versionCatalogs {
         create("awssdk") {
-            from("aws.sdk.kotlin:version-catalog:1.6.0")
+            from("aws.sdk.kotlin:version-catalog:1.6.1")
         }
     }
 }
